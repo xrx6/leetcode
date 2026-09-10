@@ -28,6 +28,15 @@ sort(v.begin(), v.end(), [](int a, int b) {  // 自定义:返回 true 表示 a �
 // 普通数组:sort(arr, arr + n);
 ```
 
+## reverse(`<algorithm>`,力扣免 include)
+
+```cpp
+reverse(v.begin(), v.end());           // 整段翻转
+reverse(v.begin(), v.begin() + k);     // 只翻前 k 个:区间同样是 [first, last) 左闭右开
+```
+
+用法见 `翻转/三次翻转.md`(189)。
+
 ## 长度
 
 - vector:`v.size()`(返回无符号 size_t;`v.size()-1` 在空 vector 时下溢成大数,循环会飞)
