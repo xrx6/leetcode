@@ -16,6 +16,7 @@
 | 非 void 函数不写 return | 编译不过(26/80 踩过) | 签名承诺了返回类型就要兑现:26 `return slow+1`,80 `return slow` |
 | 空 vector 当计数器 `count[x]++` | 越界写,首用例即崩(169) | 值域小且非负才能数组计数;任意值(±10⁹/负数)用 `unordered_map` |
 | map 按下标扫 `j<m.size()` | `m[j]` 访问即插入,size 与 j 同涨 → 死循环 MLE(169) | 遍历用 `for (auto& [k,v] : m)`;只判存在用 `m.count(x)` |
+| `int dp[n][2]` 当二维数组 | VLA 是 C99 特性非标准 C++:MSVC 编译错;大 n 爆栈且无法 catch(122) | `vector<vector<int>> dp(n, vector<int>(2))` 或滚动变量;大数组放堆 |
 
 ## sort(`<algorithm>`,力扣免 include)
 
@@ -111,6 +112,47 @@ for (auto& [k,v] : m) {...}     // 遍历键值对,k 键 v 值(C++17)
 - `map` vs `unordered_map`:前者红黑树,按键有序,O(log n);后者哈希,无序,平均 O(1)。刷题默认 unordered,只有要按键的顺序遍历时才用 map。
 - 数组计数 `vector<int> count(N,0)` 只在「值域小且非负」时可用(构造时定长清零,不是 push_back——push_back 只在末尾追加,不改变「值→格子」的映射)。
 
+## 范围 for(C++11)
+
+```cpp
+for (int price : prices) {...}       // price 是每个元素的「拷贝」:只读小对象
+for (int& x : v) {...}               // 引用:循环体里改 x 会写回数组
+for (const auto& x : v) {...}       // 只读引用:大对象(string/vector)省拷贝
+```
+
+- **心智模型**:把容器从头到尾依次取出,每次把元素放进左边的变量——等价于 `for(i...) { int price = v[i]; ... }`。
+- **什么时候用**:循环体只要元素的值、不需要下标 i——没有 `i<n` 就没有越界机会(121 只读价格,正合适)。
+- **什么时候不能用**:需要下标(和 `i-1` 比较、写另一个数组的位置,如 189 翻转区间)→ 传统下标循环。
+- 169 修 MLE 的 `for (auto& [k,v] : m)` 就是它 + **结构化绑定**(pair/键值对一次拆两个变量)。
+- 遍历二维:行必须 `auto& row`,否则每行整行拷贝;行内元素 `int x` 拷贝没成本:
+
+```cpp
+for (auto& row : dp)
+    for (int x : row) {...}
+```
+
+## 动态大小的数组:VLA 坑与二维 vector 正解
+
+```cpp
+int dp[n][2];                                // VLA:n 运行期才知道 → 栈上动态分
+vector<vector<int>> dp(n, vector<int>(2));   // 标准正解:n 行 × 每行 2 个 0
+```
+
+- **VLA 是 C99 的东西,不是标准 C++**:GCC 当扩展放行(`-Wpedantic` 能看到警告),MSVC 直接编译错误——力扣能过 ≠ 标准 C++。真正的雷是**栈**:默认 1~8MB,`n×2×4≈240KB`(122)尚安全,10⁵ 级再多一维状态就直奔兆级;爆栈无法 catch,而 vector 分配失败抛 bad_alloc 可救。经验法则:**大数组放堆**,比纠结 VLA 与否更本质(编译期常量的大数组 `int dp[100000][2]` 放栈上同样有爆栈风险,合法≠安全)。
+- **构造函数读法**:`vector<T> v(n, val)` = n 份 val 的拷贝;把 T 和 val 都换成 `vector<int>(...)` 就是二维——`vector<int>(2)` 先造临时行 `{0,0}`,外层拷 n 行。
+- 访问 `dp[i][j]` 与 C 二维数组**完全同形**(122 里替换声明一行,其余零改动);`dp.size()` 是行数,`dp[0].size()` 是列数。
+- 常用四形态:
+
+```cpp
+vector<vector<int>> dp(n, vector<int>(m));        // 定长矩阵全 0(DP)
+vector<vector<int>> memo(n, vector<int>(m, -1));  // 备忘录全 -1
+vector<vector<int>> g(n);                          // n 个空行,行内 push_back(邻接表)
+vector<vector<int>> mat = {{1,2,3},{4,5,6}};      // 列表初始化,直接给值
+```
+
+- 与 C 二维数组的本质区别:**每行是独立的堆对象,长度可以不一样**(锯齿数组);`g[i].resize(m)` 只改第 i 行。
+- 性能一句:`vector<vector<int>>` 是两级跳(dp→行→元素)、n+1 次堆分配;卡常极端场合才用一维 `dp[i*m+j]` 下标换算,刷题与面试不用管。
+
 ## 自测问题(不看上文试试)
 
 1. `arr[2]` 和 `*(arr+2)` 什么关系?
@@ -119,3 +161,6 @@ for (auto& [k,v] : m) {...}     // 遍历键值对,k 键 v 值(C++17)
 4. 力扣为什么要你把代码包进 `class Solution`?原地修改了数组,为什么还必须 return?
 5. `m[x]` 访问一个不存在的键会发生什么?只判断键在不在,该用哪个写法?
 6. 为什么 `for(j=0;j<m.size();j++) m[j]` 是死循环?`m.size()` 到底数的是什么?
+7. `for (int x : v)` 里改 x,数组会变吗?想写回元素该用哪种声明?什么场景只能退回下标循环?
+8. `int dp[n][2]` 在标准 C++ 里合法吗?力扣为什么能过?它真正的风险是什么?大数组的经验法则?
+9. `vector<vector<int>> dp(n, vector<int>(2))` 这行怎么读出来?`dp.size()` 和 `dp[0].size()` 各是多少?二维遍历为什么行要用 `auto&`?

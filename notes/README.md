@@ -16,4 +16,4 @@
 | 双指针/快慢指针.md | 原地压实框架;统一公式:留 k 份 ⇔ 和倒数第 k 个保留值比 | 27 / 26 / 80 |
 | 双指针/逆序双指针.md | 写指针从后往前,空位在尾部时避免覆盖 | 88 |
 | 翻转/三次翻转.md | 右移 k = 两段换位 [A\|B]→[B\|A];整体翻 + 分段翻回 | 189 |
-| C++语言参考.md | 横向语言参考:坑总集、vector/指针算术、class 与 return、unordered_map、reverse | — |
+| C++语言参考.md | 横向语言参考:坑总集、vector/指针算术、class 与 return、unordered_map、reverse、范围 for、VLA/二维 vector | — |
