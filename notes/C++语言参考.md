@@ -17,6 +17,8 @@
 | 空 vector 当计数器 `count[x]++` | 越界写,首用例即崩(169) | 值域小且非负才能数组计数;任意值(±10⁹/负数)用 `unordered_map` |
 | map 按下标扫 `j<m.size()` | `m[j]` 访问即插入,size 与 j 同涨 → 死循环 MLE(169) | 遍历用 `for (auto& [k,v] : m)`;只判存在用 `m.count(x)` |
 | `int dp[n][2]` 当二维数组 | VLA 是 C99 特性非标准 C++:MSVC 编译错;大 n 爆栈且无法 catch(122) | `vector<vector<int>> dp(n, vector<int>(2))` 或滚动变量;大数组放堆 |
+| `vector<int> dp; dp[0]=0` | 空 vector 下标写 = 解引用空指针,UBSan: reference binding to null pointer(45) | 构造时定长 `vector<int> dp(n, val)`;`operator[]` 不检查不扩容,大小只走构造/resize/push_back |
+| `INT_MAX` 当无穷大 | `dp[j]+1` 溢出成负数,min 结果悄悄错(45) | 「够大的具体数」:答案上界+1(如 10001)或习惯值 0x3f3f3f3f |
 
 ## sort(`<algorithm>`,力扣免 include)
 
@@ -153,6 +155,20 @@ vector<vector<int>> mat = {{1,2,3},{4,5,6}};      // 列表初始化,直接给�
 - 与 C 二维数组的本质区别:**每行是独立的堆对象,长度可以不一样**(锯齿数组);`g[i].resize(m)` 只改第 i 行。
 - 性能一句:`vector<vector<int>>` 是两级跳(dp→行→元素)、n+1 次堆分配;卡常极端场合才用一维 `dp[i*m+j]` 下标换算,刷题与面试不用管。
 
+## 空 vector 下标访问:operator[] 不检查、不扩容(45 标本)
+
+```cpp
+vector<int> dp;   // 默认构造:size = 0,内部数据指针是 nullptr
+dp[0] = 0;        // ← 炸:UBSan 报 reference binding to null pointer
+```
+
+- **心智模型**:vector 的大小不是「用着用着就有」,只在**构造 / resize / push_back / insert / clear** 时改变。`operator[]` 只干「往第 i 格读写」一件事——既**不做边界检查**,也**不会扩容**。空 vector 连一格都没有,`dp[0]` 等价于对 nullptr 解引用,未定义行为。
+- **为什么平时察觉不到**:`operator[]` 越界不抛异常不报错(会抛 `out_of_range` 的是 `at()`),本地小数据可能「恰好没炸」;力扣开着 UBSan(UndefinedBehaviorSanitizer)才现形。报错行号落在 `stl_vector.h` 是炸在标准库 operator[] 的内部实现处,不是自己代码的行号。
+- **正解**:构造时就把格子给足——`vector<int> dp(n, 10001); dp[0] = 0;`(构造函数读法见上一节)。
+- **`reserve(n)` 也救不了**:它只加**容量**(提前预留内存),**大小**仍是 0,照样越界。容量 = 预留的空位数,大小 = 实际元素数,只有大小范围内才可下标。
+- **对照原生数组**:`int dp[100]; dp[0]=0;` 合法——声明即有 100 格;vector 名字像数组,但格子数必须显式给,这是从数组思维迁到 vector 最容易想当然的一处。
+- **同题第二个雷:DP「无穷大」初值别用 INT_MAX**——`dp[j]+1` 在 dp[j] 尚未更新时 = 2147483647+1,溢出成负数,min 全乱,且是**静默**的溢出 UB。用「够大的具体数」:答案上界+1(45 的答案 ≤ n-1 ≤ 9999,取 10001),或最短路类题的习惯值 `0x3f3f3f3f`(≈1.06e9,自身够大、两个相加也不溢出)。
+
 ## 自测问题(不看上文试试)
 
 1. `arr[2]` 和 `*(arr+2)` 什么关系?
@@ -164,3 +180,5 @@ vector<vector<int>> mat = {{1,2,3},{4,5,6}};      // 列表初始化,直接给�
 7. `for (int x : v)` 里改 x,数组会变吗?想写回元素该用哪种声明?什么场景只能退回下标循环?
 8. `int dp[n][2]` 在标准 C++ 里合法吗?力扣为什么能过?它真正的风险是什么?大数组的经验法则?
 9. `vector<vector<int>> dp(n, vector<int>(2))` 这行怎么读出来?`dp.size()` 和 `dp[0].size()` 各是多少?二维遍历为什么行要用 `auto&`?
+10. `vector<int> dp; dp[0] = 0;` 会发生什么?力扣报错里的 stl_vector.h 行号是什么?`reserve(n)` 能救吗,为什么?
+11. DP 初始「无穷大」为什么不能写 INT_MAX?两个可用的替代写法是什么?
