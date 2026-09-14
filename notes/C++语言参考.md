@@ -19,6 +19,10 @@
 | `int dp[n][2]` 当二维数组 | VLA 是 C99 特性非标准 C++:MSVC 编译错;大 n 爆栈且无法 catch(122) | `vector<vector<int>> dp(n, vector<int>(2))` 或滚动变量;大数组放堆 |
 | `vector<int> dp; dp[0]=0` | 空 vector 下标写 = 解引用空指针,UBSan: reference binding to null pointer(45) | 构造时定长 `vector<int> dp(n, val)`;`operator[]` 不检查不扩容,大小只走构造/resize/push_back |
 | `INT_MAX` 当无穷大 | `dp[j]+1` 溢出成负数,min 结果悄悄错(45) | 「够大的具体数」:答案上界+1(如 10001)或习惯值 0x3f3f3f3f |
+| 成员写进构造函数 | `RandomizedSet(){ vector<int> nums; }` 是局部变量,函数结束即销毁,成员函数看不见(380) | 声明放类体 `private:` 下;vector/map 默认构造自动为空,构造函数留空即可 |
+| 成员函数漏括号 | `nums.size-1` 把「函数本身」当值用,编译不过(380) | `nums.size()`;C++ 取东西的动作普遍带 `()` |
+| 边遍历边 `erase(it)` 后 `++it` | 迭代器失效,跳元素/崩溃 | `it = v.erase(it)` 接管「下一个有效位置」,删除分支不再 `++` |
+| `back()`/`end()` 混用 | `*end()` 解引用哨兵 = UB | 要**元素**用 `front()/back()`,要**位置**用 `begin()/end()`;末元素 = `*(end()-1)` |
 
 ## sort(`<algorithm>`,力扣免 include)
 
@@ -92,6 +96,25 @@ return i - nums.data();                // 指针 − 指针:隔着几个元素
 0x1010 (无) ← data()+4 = end
 ```
 
+## 迭代器:三招合同,指针就是数组的迭代器
+
+```cpp
+int arr[5] = {3,0,6,1,5};
+int* p = arr;           // 数组名退化成首地址——这就是数组的 begin
+int* e = arr + 5;       // 尾后哨兵——这就是数组的 end
+for (; p != e; ++p) *p; // 三招:!=(比)、++(走)、*(读)
+
+vector<int> v = {3,0,6,1,5};
+auto it = v.begin();    // vector 迭代器 ≈ data() 指针穿马甲
+for (; it != v.end(); ++it) *it;
+```
+
+- **为什么发明它**:sort/find 想通吃所有容器,只定最小合同「能指着取(`*it`)、能前进(`++`)、能比到头没有(`!=`)」,谁满足就伺候谁。C 的指针天生会三招 → **指针就是数组的迭代器**,`sort(arr, arr+n)` 因此成立,同一份 sort 也吃 vector(`sort(v.begin(), v.end())`)。
+- **begin()/end() 是「取起点/哨兵的函数」**:`v.begin()` 指首元素,`v.end()` 指最后一格的**再下一格**(哨兵:可以算、可以比,**不可解引用**)。左闭右开让「空区间」免费表示(begin==end)。
+- **范围 for 是迭代器的皮肤**:`for (int x : v)` 展开成 begin/end + 三招循环,裸数组同样适用(`for (int x : arr)` 合法)。
+- **能力分级**:vector/数组 = 指针级全能(`it+3`、`it1-it2`、`<`);map/list = 只能 `++/--` 一步步走。所以 find 谁都能伺候,`it - v.begin()`(迭代器换下标)只有指针级的能玩。
+- **auto 顺理成章**:迭代器真实类型如 `unordered_map<int,int>::iterator`,没人手写——`auto it = m.find(k);` 让编译器按右边填类型,编译期钉死,不是「万能变量」。三大高频岗位:`auto it = m.find(...)`、`auto it = v.begin()`、`for (auto& [k,v] : m)`。
+
 ## class 与 return(力扣提交格式的原理)
 
 - `class Solution` 只是**外壳**:LeetCode 规定的提交打包格式,判题机按 `Solution s; int k = s.removeDuplicates(nums);` 调用。类本身不干活,干活的是里面的**成员函数**。
@@ -113,6 +136,9 @@ for (auto& [k,v] : m) {...}     // 遍历键值对,k 键 v 值(C++17)
 - `m.size()` 是「**不同键的个数**」,不是值域宽度;map 的键是散的,不能按下标扫,只能遍历键值对。
 - `map` vs `unordered_map`:前者红黑树,按键有序,O(log n);后者哈希,无序,平均 O(1)。刷题默认 unordered,只有要按键的顺序遍历时才用 map。
 - 数组计数 `vector<int> count(N,0)` 只在「值域小且非负」时可用(构造时定长清零,不是 push_back——push_back 只在末尾追加,不改变「值→格子」的映射)。
+- **哈希原理三句话**(380 深入):①哈希函数把键搅成几乎随机的巨大整数(int 基本是自己变身,string 逐字符搅动),同键必同值(确定性),越散越好(均匀);②对桶数取余落桶(和 rand()%n 同一招);③同桶冲突用链挂起。查找 = 算一次哈希 + 走几步短链,与 n 无关 → **平均 O(1)**;最坏全挤一桶退化 O(n),故只承诺「平均」。装填因子 = size/桶数,超 1.0 触发 **rehash**(桶翻倍、全部重挂、迭代器全作废)——所以遍历时别插入。
+- **分工三件套**:只判存在 → `count(k)`(纯读探针,0/1,零副作用);判存在+接着读改 → `find(k)` 返回迭代器,`it != m.end()` 为找到,`it->first` 键 `it->second` 值(迭代器像指针,取成员用 `->`);已定位就改**省一次查找**且无插入风险。`m[k]` 仅在「确定存在或本来就想插入」时用。
+- **元素住哪桶由哈希值定**,与插入序无关,跨编译器还可能不同——依赖遍历顺序的代码都是错的;要按键有序遍历用 `map`。
 
 ## 范围 for(C++11)
 
@@ -169,6 +195,36 @@ dp[0] = 0;        // ← 炸:UBSan 报 reference binding to null pointer
 - **对照原生数组**:`int dp[100]; dp[0]=0;` 合法——声明即有 100 格;vector 名字像数组,但格子数必须显式给,这是从数组思维迁到 vector 最容易想当然的一处。
 - **同题第二个雷:DP「无穷大」初值别用 INT_MAX**——`dp[j]+1` 在 dp[j] 尚未更新时 = 2147483647+1,溢出成负数,min 全乱,且是**静默**的溢出 UB。用「够大的具体数」:答案上界+1(45 的答案 ≤ n-1 ≤ 9999,取 10001),或最短路类题的习惯值 `0x3f3f3f3f`(≈1.06e9,自身够大、两个相加也不溢出)。
 
+## size 与 capacity:扩容、均摊 O(1)、迭代器失效(380 语言点)
+
+```
+栈上(vector 对象,~24字节)        堆上(元素)
+┌──────────────┐
+│ data ────────┼──→ [10][20][30][?]
+│ size = 3     │      ↑合法下标 0..2    ↑第4格:capacity 有、size 无,不可访问
+│ capacity = 4 │
+└──────────────┘
+```
+
+- **跟着 push_back 走(GCC 翻倍策略)**:size 0→1→2→3→4→5,capacity 0→1→2→4→4→8。搬迁只发生在跨 2 的幂时,旧内存随之释放——**此刻之前拿到的迭代器/指针/引用全部作废**(380 里没存过迭代器所以无恙)。搬迁总量 1+2+4+…+n/2 ≈ n,摊到 n 次 push_back 每次 O(1),这就是「均摊」。
+- **失效规则表**:
+
+| 动作 | 什么作废 |
+|---|---|
+| push_back 触发扩容 | 全部作废(旧内存已释放) |
+| insert / erase 中间位置 | 被动位置之后的作废 |
+| unordered_map 插入触发 rehash | 全部迭代器作废 |
+
+- **边遍历边删的正解**:`it = v.erase(it)`(erase 返回「被删位置现在的新元素」),删除分支不再 `++it`;`erase(it)` 后直接 `++` 是经典崩溃。
+- **改大小三函数**:resize(n) 改 size(变大补 0/指定值,变小截断);reserve(n) 只保 capacity ≥ n、size 不变(**救不了下标越界**);clear() size 归 0、capacity 保留。pop_back 只 size−1 不缩内存。
+- **at() 调试法**:怀疑越界时把 `v[i]` 临时改 `v.at(i)`,越界当场抛 out_of_range,把静默 UB 变显性报错。
+- **两家族**:front()/back() 返回**元素**(int);begin()/end() 返回**位置**(迭代器,end() 是哨兵非元素)。`back()` 对空容器同样是 UB。取末元素三种等价:`v.back()`、`*(v.end()-1)`、`v[v.size()-1]`(最后这种空容器时 size()-1 无符号下溢,坑)。
+
+## auto 与 rand()%n(380 语言点)
+
+- **auto = 类型让编译器按右边表达式填**,编译期钉死,不是「万能变量」(之后装别的类型照样编译错)。零运行开销,纯粹省打字——尤其迭代器那种长类型。
+- **rand()%n = 取余造随机下标**:rand() 吐 [0,RAND_MAX] 的伪随机整数,%n 的余数必落 0..n-1(时钟:%12 必落 0..11),恰好是合法下标全体 → 等概率命中每个元素。严格讲 RAND_MAX+1 不被 n 整除时有极微偏差,刷题忽略;工程用 mt19937 + uniform_int_distribution(无偏且可复现)。
+
 ## 自测问题(不看上文试试)
 
 1. `arr[2]` 和 `*(arr+2)` 什么关系?
@@ -182,3 +238,10 @@ dp[0] = 0;        // ← 炸:UBSan 报 reference binding to null pointer
 9. `vector<vector<int>> dp(n, vector<int>(2))` 这行怎么读出来?`dp.size()` 和 `dp[0].size()` 各是多少?二维遍历为什么行要用 `auto&`?
 10. `vector<int> dp; dp[0] = 0;` 会发生什么?力扣报错里的 stl_vector.h 行号是什么?`reserve(n)` 能救吗,为什么?
 11. DP 初始「无穷大」为什么不能写 INT_MAX?两个可用的替代写法是什么?
+12. `sort(arr, arr+n)` 的两个参数各是什么?为什么裸数组不用成员函数也能配合 sort/find?
+13. vector 和 unordered_map 的迭代器各指向什么?「一个元素」分别是什么?谁能 `it+n`、谁只能 `++`?
+14. push_back 触发扩容后,之前保存的迭代器/引用还能用吗?为什么?边遍历边删的正解写法?
+15. 只判键存在、判存在+接着改值、确定键存在,分别该用 count/find/operator[] 里的哪个?
+16. resize、reserve、clear 分别改的是 size 还是 capacity?reserve 能让下标访问合法吗?
+17. nums.back() 和 nums.end() 差在哪?用迭代器写出「最后一个元素」。
+18. rand()%n 为什么恰好落在合法下标范围?它轻微不均匀的根源是什么?
