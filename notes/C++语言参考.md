@@ -17,7 +17,7 @@
 | 空 vector 当计数器 `count[x]++` | 越界写,首用例即崩(169) | 值域小且非负才能数组计数;任意值(±10⁹/负数)用 `unordered_map` |
 | map 按下标扫 `j<m.size()` | `m[j]` 访问即插入,size 与 j 同涨 → 死循环 MLE(169) | 遍历用 `for (auto& [k,v] : m)`;只判存在用 `m.count(x)` |
 | `int dp[n][2]` 当二维数组 | VLA 是 C99 特性非标准 C++:MSVC 编译错;大 n 爆栈且无法 catch(122) | `vector<vector<int>> dp(n, vector<int>(2))` 或滚动变量;大数组放堆 |
-| `vector<int> dp; dp[0]=0` | 空 vector 下标写 = 解引用空指针,UBSan: reference binding to null pointer(45) | 构造时定长 `vector<int> dp(n, val)`;`operator[]` 不检查不扩容,大小只走构造/resize/push_back |
+| `vector<int> dp; dp[0]=0` | 空 vector 下标写 = 解引用空指针,UBSan: reference binding to null pointer(45/238 两次) | 构造时定长 `vector<int> dp(n, val)`;`operator[]` 不检查不扩容,大小只走构造/resize/push_back |
 | `INT_MAX` 当无穷大 | `dp[j]+1` 溢出成负数,min 结果悄悄错(45) | 「够大的具体数」:答案上界+1(如 10001)或习惯值 0x3f3f3f3f |
 | 成员写进构造函数 | `RandomizedSet(){ vector<int> nums; }` 是局部变量,函数结束即销毁,成员函数看不见(380) | 声明放类体 `private:` 下;vector/map 默认构造自动为空,构造函数留空即可 |
 | 成员函数漏括号 | `nums.size-1` 把「函数本身」当值用,编译不过(380) | `nums.size()`;C++ 取东西的动作普遍带 `()` |
@@ -181,7 +181,7 @@ vector<vector<int>> mat = {{1,2,3},{4,5,6}};      // 列表初始化,直接给�
 - 与 C 二维数组的本质区别:**每行是独立的堆对象,长度可以不一样**(锯齿数组);`g[i].resize(m)` 只改第 i 行。
 - 性能一句:`vector<vector<int>>` 是两级跳(dp→行→元素)、n+1 次堆分配;卡常极端场合才用一维 `dp[i*m+j]` 下标换算,刷题与面试不用管。
 
-## 空 vector 下标访问:operator[] 不检查、不扩容(45 标本)
+## 空 vector 下标访问:operator[] 不检查、不扩容(45/238 标本)
 
 ```cpp
 vector<int> dp;   // 默认构造:size = 0,内部数据指针是 nullptr
@@ -193,6 +193,7 @@ dp[0] = 0;        // ← 炸:UBSan 报 reference binding to null pointer
 - **正解**:构造时就把格子给足——`vector<int> dp(n, 10001); dp[0] = 0;`(构造函数读法见上一节)。
 - **`reserve(n)` 也救不了**:它只加**容量**(提前预留内存),**大小**仍是 0,照样越界。容量 = 预留的空位数,大小 = 实际元素数,只有大小范围内才可下标。
 - **对照原生数组**:`int dp[100]; dp[0]=0;` 合法——声明即有 100 格;vector 名字像数组,但格子数必须显式给,这是从数组思维迁到 vector 最容易想当然的一处。
+- **238 二次复发(距 45 约一个月)**:`vector<int> answer; answer[0]=1;` 同款炸法——「看过笔记」不等于「长在手上」。下标写 vector 前先问一句「格子谁给的」:要么构造时定长,要么 push_back。
 - **同题第二个雷:DP「无穷大」初值别用 INT_MAX**——`dp[j]+1` 在 dp[j] 尚未更新时 = 2147483647+1,溢出成负数,min 全乱,且是**静默**的溢出 UB。用「够大的具体数」:答案上界+1(45 的答案 ≤ n-1 ≤ 9999,取 10001),或最短路类题的习惯值 `0x3f3f3f3f`(≈1.06e9,自身够大、两个相加也不溢出)。
 
 ## size 与 capacity:扩容、均摊 O(1)、迭代器失效(380 语言点)
