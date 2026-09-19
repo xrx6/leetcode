@@ -1,0 +1,52 @@
+// 题号:0134  题名:加油站  难度:中等
+// 链接:https://leetcode.cn/problems/gas-station/?envType=study-plan-v2&envId=top-interview-150
+// 状态:看题解后理解(逐层拆解后理解,待自己敲一遍 AC)
+//
+// 思路:
+//   除了油量没有别的状态 → 两数组合一:diff[i] = gas[i]-cost[i],问题变成
+//   「环绕数组上找起点 s,使从 s 起的每个前缀和 ≥ 0」。暴力对每个起点
+//   各绕一圈 O(n²)。两个事实把外层循环塌掉:
+//   ① 全局充要:绕一圈的净变化 = Σdiff,与起点无关(起点只是把圈剪开
+//      的位置,每站一加一减不变)。Σdiff<0 ⇒ 任何起点的油量从 0 出发、
+//      收在负值,中途必穿过负,直接 -1;Σdiff≥0 ⇒ 必有解——取 diff
+//      前缀和最低点的下一站,从它出发每个前缀和 =「原前缀和 − 最低点」≥0。
+//   ② 段淘汰:从 A 出发死在 B(油量首次 <0)⇒ (A..B] 内任何起点也过不
+//      了 B——A 走到中途任一站时身上油量 ≥0,半路接管者身上只有 0,
+//      处处更穷,只会死得更早。一次失败 = 淘汰一整段候选,失败不再是白试。
+//   一趟线性扫:tank 从候选起点累计 diff,一死就 start=i+1、tank 清零
+//   重开;起点只前进不回退,每站只进当前段一次。total 同步累计全程盈亏,
+//   扫完按 ① 终审。环回段 [0,start) 免检:start 活到 n-1 后,任何更晚
+//   的 s' 出发都不比 start 富(接管论证),题面又保证解唯一,所以有解
+//   就只能是 start——这也是不用真绕第二圈的底气。
+// 复杂度:
+//   时间 O(n)  空间 O(1)  (暴力基线 O(n²):n 个起点 × 各绕一圈)
+// 坑:
+//   1. 死站换起点是 i+1 不是 i:tank<0 判的是「在 i 加满仍付不起
+//      cost[i]」,i 自己已在淘汰段里。
+//   2. tank 与 total 分工不能合并:tank 中途清零过,当不了全程判决;
+//      total 是全量累计,判不了「当前段」的死。
+//   3. total≥0 时 start 不会越到 n:每次淘汰都背着一段负和,若连最后
+//      一段也死,total 必 <0,矛盾——返回 start 无需再验它合法。
+//   4. 数值口径:|total| ≤ n·max|diff| = 1e5·1e4 = 1e9,int 上限约
+//      2.1e9,撑得住;规模再大一档就得换 long long。
+class Solution {
+public:
+    int canCompleteCircuit(vector<int>& gas, vector<int>& cost) {
+        int n = gas.size();
+        int start = 0;   // 候选起点,只前进不回退
+        int tank = 0;    // 当前段油量:从 start 累计到 i
+        int total = 0;   // 全程总盈亏,与起点无关
+        for (int i = 0; i < n; i++)
+        {
+            int diff = gas[i] - cost[i];
+            tank += diff;
+            total += diff;
+            if (tank < 0)              // 死在 i:付不起离开 i 的 cost[i]
+            {
+                start = i + 1;         // (旧 start..i] 整段淘汰
+                tank = 0;              // 新段从 0 重新起算
+            }
+        }
+        return total >= 0 ? start : -1;
+    }
+};
