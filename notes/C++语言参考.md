@@ -47,7 +47,12 @@ reverse(v.begin(), v.begin() + k);     // 只翻前 k 个:区间同样是 [first
 ## 长度
 
 - vector:`v.size()`(返回无符号 size_t;`v.size()-1` 在空 vector 时下溢成大数,循环会飞)
-- string:`length()`(和 size() 等价);vector 没有 length(),别记混
+- string:`s.size()` 或 `s.length()`,两者完全等价;vector 没有 length(),别记混
+  - **size() 不是 vector 的专利**(13 问答):标准库给所有容器发了一份公共接口合同——size/empty/begin/end/swap 谁都得会(唯一例外 forward_list),泛型算法和范围 for 才能通吃。string 也是容器:**专门装 char 的那个**,13 是仓库第一道收 string 参数的题
+  - 既然是容器,整套动作全有:下标 `s[i]`、范围 for `for (char c : s)`、`back()`、`push_back(c)`;map/set 也有 size()——169 的 `m.size()` 数的就是「不同键个数」
+  - 为什么有两个名字:string 比 STL 容器诞生得早,先有 length();STL 后来统一成 size(),string 两个都保留
+  - `s.size()` 同样返回无符号 size_t,空串 `s.size()-1` 与 vector 同款下溢
+  - 心智模型:`string ≈ vector<char> + 字符串专用操作`(+拼接、字典序比较、substr)
 - 普通数组:`sizeof(arr)/sizeof(arr[0])`;C++17 可用 `std::size(arr)`
   - **大坑**:数组传参后退化为指针,sizeof 变成指针大小(8 字节),此法失效 → 长度要当参数传
 
@@ -250,3 +255,4 @@ dp[0] = 0;        // ← 炸:UBSan 报 reference binding to null pointer
 17. nums.back() 和 nums.end() 差在哪?用迭代器写出「最后一个元素」。
 18. rand()%n 为什么恰好落在合法下标范围?它轻微不均匀的根源是什么?
 19. unordered_map 的列表初始化怎么写?`val[s[i]]` 吃到表外字符会发生什么——和 169 的 MLE 炸法差在哪?
+20. size() 是 vector 独有的吗?string 取长度有哪两个写法、为什么有两个名字?空串 `s.size()-1` 会怎样?
