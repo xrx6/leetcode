@@ -118,6 +118,7 @@ for (; it != v.end(); ++it) *it;
 - **begin()/end() 是「取起点/哨兵的函数」**:`v.begin()` 指首元素,`v.end()` 指最后一格的**再下一格**(哨兵:可以算、可以比,**不可解引用**)。左闭右开让「空区间」免费表示(begin==end)。
 - **范围 for 是迭代器的皮肤**:`for (int x : v)` 展开成 begin/end + 三招循环,裸数组同样适用(`for (int x : arr)` 合法)。
 - **能力分级**:vector/数组 = 指针级全能(`it+3`、`it1-it2`、`<`);map/list = 只能 `++/--` 一步步走。所以 find 谁都能伺候,`it - v.begin()`(迭代器换下标)只有指针级的能玩。
+- **指到的元素带成员时,`*it` 升级成 `->`**(12 问答):`it->first` ≡ `(*it).first`——先解引用拿到指着的那格,再对它取成员。map 的一格是 `pair<const int,string>`,两个成员名定死:`first` 键、`second` 值(位置编号,没有内涵)。**分工口诀:手里是对象(或引用)用 `.`,手里是指针/迭代器(指向对象)用 `->`**。vector<int> 的迭代器指向的元素是 int 本身,没成员可取,所以只见 `*it` 不见 `->`;经迭代器只能改 `it->second`——键是树排座的依据,准改值不准改键。
 - **auto 顺理成章**:迭代器真实类型如 `unordered_map<int,int>::iterator`,没人手写——`auto it = m.find(k);` 让编译器按右边填类型,编译期钉死,不是「万能变量」。三大高频岗位:`auto it = m.find(...)`、`auto it = v.begin()`、`for (auto& [k,v] : m)`。
 
 ## class 与 return(力扣提交格式的原理)
@@ -258,3 +259,4 @@ dp[0] = 0;        // ← 炸:UBSan 报 reference binding to null pointer
 19. unordered_map 的列表初始化怎么写?`val[s[i]]` 吃到表外字符会发生什么——和 169 的 MLE 炸法差在哪?
 20. size() 是 vector 独有的吗?string 取长度有哪两个写法、为什么有两个名字?空串 `s.size()-1` 会怎样?
 21. 13 的值表用 unordered_map、12 的面额表用数组,选型差在哪三个词上?12 若改用 map,循环怎么写、为什么 rbegin() 打头的是 1000?unordered_map 版面额表会输出什么样的错串?
+22. `it->first` 展开是哪两步?`.` 和 `->` 按什么分工?为什么 vector<int> 的迭代器从不写 `->` 而 map 的迭代器高频写?经迭代器为什么改不了 `it->first`?
