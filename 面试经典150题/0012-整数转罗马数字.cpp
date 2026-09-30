@@ -45,6 +45,7 @@
 //      扣对、必然归零),贴的符号错——不含数字 4/9 的输入全侥幸通过,
 //      含 4/9 的全错,最小反例 4(输出 "V")。两字面额必须 string:
 //      map<int,string> 配 {4,"IV"}(坑总集有行)。
+// 解法一(数组版,主解):两张平行定表,for+while 贪心扣减。
 class Solution {
 public:
     string intToRoman(int num) {
@@ -61,5 +62,30 @@ public:
             }
         }
         return ans;
+    }
+};
+
+// 解法二(map 版,自敲骨架修正 'IV' 截断坑后的形状;提交时改名 Solution):
+//   与解法一同一算法、不同容器——std::map 按键升序,rbegin()/rend() 反着
+//   走从 1000 打头;初始化升着写也不怕,顺序与键值对齐由容器合同兜底
+//   (坑 3/坑 4 在这版天然不存在),代价是迭代器写法啰嗦。选型口径与
+//   ->/auto/遍历序四条问答见 C++语言参考;原 char 值类型 WA 见坑 5。
+class Solution2 {
+public:
+    string intToRoman(int num) {
+        const map<int, string> val{{1, "I"}, {4, "IV"}, {5, "V"}, {9, "IX"},
+                                   {10, "X"}, {40, "XL"}, {50, "L"}, {90, "XC"},
+                                   {100, "C"}, {400, "CD"}, {500, "D"},
+                                   {900, "CM"}, {1000, "M"}};    // 键值同节点,一张表无需对齐
+        string s;
+        for (auto it = val.rbegin(); it != val.rend(); it++)     // 反向迭代:最大键 1000 打头
+        {
+            while (num >= it->first)
+            {
+                s += it->second;
+                num -= it->first;
+            }
+        }
+        return s;
     }
 };
