@@ -23,6 +23,7 @@
 | 成员函数漏括号 | `nums.size-1` 把「函数本身」当值用,编译不过(380) | `nums.size()`;C++ 取东西的动作普遍带 `()` |
 | 边遍历边 `erase(it)` 后 `++it` | 迭代器失效,跳元素/崩溃 | `it = v.erase(it)` 接管「下一个有效位置」,删除分支不再 `++` |
 | `back()`/`end()` 混用 | `*end()` 解引用哨兵 = UB | 要**元素**用 `front()/back()`,要**位置**用 `begin()/end()`;末元素 = `*(end()-1)` |
+| `'IV'` 当字符串用 | 单引号只装**一个**字符;'IV' 是多字符字面量,类型 int(GCC ('I'<<8)\|'V'=18774),塞进 char 截断成 'V'——只警告不报错,六种减法符号全退化成第二个字符,含 4/9 的输入全 WA(12 自敲:3749→MMMDCCLX,不含 4/9 的 2047 个侥幸全过) | 两字以上用双引号配 `string`:`map<int,string>{{4,"IV"}}`;单引号留给单字符 |
 
 ## sort(`<algorithm>`,力扣免 include)
 
@@ -266,3 +267,4 @@ dp[0] = 0;        // ← 炸:UBSan 报 reference binding to null pointer
 23. `auto it = tab.rbegin()`(tab 是 `const map<int,string>`)填出的完整类型是什么?最里层为什么是 const 版?reverse_iterator 里裹着谁、rbegin() 裹的是哪个位置——为什么解引用恰好拿到最大键?
 24. map 的初始化列表乱着写,正向遍历是什么序、靠什么定序?想让 begin() 直接最大键打头,除了 rbegin/rend 还有什么办法?unordered_map 的遍历序和插入序什么关系?
 25. `*m.begin()`、`m.begin()->first`、`m.begin()->second` 各是什么?map 排序为什么只看键不看值——说出两个理由?为什么经迭代器改 `it->second` 不会乱树序?
+26. `'IV'` 是什么类型、值多少?塞进 char 变成什么、为什么编译器只警告不报错?12 自敲版恰好哪类输入侥幸全对——为什么恰好是它们?
