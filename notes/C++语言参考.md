@@ -234,6 +234,7 @@ dp[0] = 0;        // ← 炸:UBSan 报 reference binding to null pointer
 ## auto 与 rand()%n(380 语言点)
 
 - **auto = 类型让编译器按右边表达式填**,编译期钉死,不是「万能变量」(之后装别的类型照样编译错)。零运行开销,纯粹省打字——尤其迭代器那种长类型。
+- **auto 填出来到底什么类型**(12 问答):看右边。`auto it = tab.rbegin()`,tab 是 `const map<int,string>` → `std::reverse_iterator<map<int,string>::const_iterator>`:最里层是 const_iterator(容器声明成 const,一格整个准看不准改,连 `it->second` 都只读);外裹 reverse_iterator 外壳——里面裹的还是正向迭代器,只是 `++` 被翻译成「往小走」,且 rbegin() 裹的正是 end():方向反过来后,解引用取 base()−1,「尾后一格」恰好落在最后一个元素(最大键)上。这串手写 60 多字符没人受得了;auto 顺带让同一句在 vector 版/map 版通用。
 - **rand()%n = 取余造随机下标**:rand() 吐 [0,RAND_MAX] 的伪随机整数,%n 的余数必落 0..n-1(时钟:%12 必落 0..11),恰好是合法下标全体 → 等概率命中每个元素。严格讲 RAND_MAX+1 不被 n 整除时有极微偏差,刷题忽略;工程用 mt19937 + uniform_int_distribution(无偏且可复现)。
 
 ## 自测问题(不看上文试试)
@@ -260,3 +261,4 @@ dp[0] = 0;        // ← 炸:UBSan 报 reference binding to null pointer
 20. size() 是 vector 独有的吗?string 取长度有哪两个写法、为什么有两个名字?空串 `s.size()-1` 会怎样?
 21. 13 的值表用 unordered_map、12 的面额表用数组,选型差在哪三个词上?12 若改用 map,循环怎么写、为什么 rbegin() 打头的是 1000?unordered_map 版面额表会输出什么样的错串?
 22. `it->first` 展开是哪两步?`.` 和 `->` 按什么分工?为什么 vector<int> 的迭代器从不写 `->` 而 map 的迭代器高频写?经迭代器为什么改不了 `it->first`?
+23. `auto it = tab.rbegin()`(tab 是 `const map<int,string>`)填出的完整类型是什么?最里层为什么是 const 版?reverse_iterator 里裹着谁、rbegin() 裹的是哪个位置——为什么解引用恰好拿到最大键?
