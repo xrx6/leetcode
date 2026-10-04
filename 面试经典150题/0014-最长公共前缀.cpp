@@ -31,6 +31,7 @@
 //   4. 小冗余:原提交 string s; 先默认构造空串、再 s=strs[0]; 赋值,
 //      string s=strs[0]; 一步拷贝构造到位;本入库版已合并。
 
+// 解法一(横向折叠,自敲版,主解):滚动候选只缩不涨,每来一条两刀截短。
 class Solution {
 public:
     string longestCommonPrefix(vector<string>& strs) {
@@ -52,5 +53,30 @@ public:
             }
         }
         return s;
+    }
+};
+
+// 解法二(纵向逐列,官方标准解;提交时改名 Solution):
+//   与解法一同一结论、不同走法:不维护候选副本,以 strs[0] 为参照(免费,
+//   不拷贝 ⇒ O(1) 额外空间),按列扫,列内全票相同才前进。「有人到头」
+//   (j>=strs[i].size())和「列内不同」(!=)两种否决合并进同一个 if——
+//   对照解法一:同一个边界,那边用「长度刀」单独一个 if 安放,这边并成
+//   一句判据;横向的否决只截短候选,剩余串还得一条条过(截空后每条
+//   O(1),但不停),纵向第一处否决当场 return 收工。坑 1 的「两刀」在
+//   这版里天生不存在:到头就是否决,不存在「全等但候选过长」的收尾
+//   问题。坑 2 坑 3 也随之消失——没有 erase 就没有 erase 的坑:选对
+//   走法,坑会少一截。
+class Solution2 {
+public:
+    string longestCommonPrefix(vector<string>& strs) {
+        for(int j=0;j<strs[0].size();j++)          // 第 j 列:拿参照串 strs[0] 的第 j 格
+        {
+            for(int i=1;i<strs.size();i++)
+            {
+                if(j>=strs[i].size()||strs[i][j]!=strs[0][j])
+                    return strs[0].substr(0,j);    // 一票否决:前 j 格即答案(取段视角,不动原串)
+            }
+        }
+        return strs[0];                            // 每列全票通过:整条都是前缀
     }
 };
