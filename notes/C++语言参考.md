@@ -58,6 +58,29 @@ reverse(v.begin(), v.begin() + k);     // 只翻前 k 个:区间同样是 [first
 - 普通数组:`sizeof(arr)/sizeof(arr[0])`;C++17 可用 `std::size(arr)`
   - **大坑**:数组传参后退化为指针,sizeof 变成指针大小(8 字节),此法失效 → 长度要当参数传
 
+## string 删段与取段:erase / substr(14 问答)
+
+```cpp
+s.erase(pos, len);                // 从下标 pos 删 len 个字符(原地修改,最常用)
+s.erase(pos);                     // 只给下标 = 从 pos 删到**末尾**(不是只删一个!)
+s.erase(it);                      // 删迭代器指着的那一个字符
+s.erase(first, last);             // 删迭代器区间 [first, last)
+s.resize(k);                      // 截短到 k 格(变长则补 '\0'/指定值)——「长度刀」另一写法
+string t = s.substr(pos, len);    // 取段:从 pos 拷贝 len 个,**不动原串**;len 缺省 = 取到尾
+```
+
+- **第二参数是「要删的长度」,不是结束下标**:想删下标区间 [i,j) 写 `erase(i, j-i)`。
+  14 自敲版 `erase(pos, s.size())` 二参远超剩余长度,标准库**钳制**成「删到尾」恰好
+  无害——这层宽容是钳制给的,不是「删 len 个」的语义本身;一参数 `erase(pos)` 才是
+  把「删到尾」说准的写法。
+- **substr 是反视角**:erase 删掉不要的(原地),substr 拿出想要的(拷贝);跳过
+  [i, i+len) 一段 = `s.substr(0,i) + s.substr(i+len)`。substr(pos) 一个参数=从 pos
+  取到尾,与 erase(pos) 对偶。
+- **erase 单次 O(n)**(后面字符整体前搬):循环里逐个 erase 易到 O(n²),逐字符删改
+  用双指针/栈;**边遍历边 erase 迭代器失效**,正解 `it = s.erase(it)`(坑总集已有行,
+  vector 同款)。
+- 删最后一个用 `s.pop_back()`;`s.erase(s.size()-1)` 是同效果的 erase 写法。
+
 ## 数组名 vs vector 名(最重要的概念区分)
 
 ```cpp
@@ -270,3 +293,6 @@ dp[0] = 0;        // ← 炸:UBSan 报 reference binding to null pointer
 25. `*m.begin()`、`m.begin()->first`、`m.begin()->second` 各是什么?map 排序为什么只看键不看值——说出两个理由?为什么经迭代器改 `it->second` 不会乱树序?
 26. `'IV'` 是什么类型、值多少?塞进 char 变成什么、为什么编译器只警告不报错?12 自敲版恰好哪类输入侥幸全对——为什么恰好是它们?
 27. `else l++; c++;` 的第二行什么时候执行?58 里它为什么恰好无害——哪两条控制流路径替它兜了底?教训一句话?
+28. `s.erase(pos)` 只给一个参数删的是哪段?想删下标区间 [i,j) 两参数该怎么写?`s.substr(pos)` 一个参数取的是哪段?
+29. `s.erase(pos, s.size())` 第二参数超了会发生什么——为什么恰好无害?把「删到尾」说准的一参数写法是什么?
+30. 「跳过 [i, i+len) 取剩余部分」用 substr 怎么拼出来?erase 与 substr 的视角差别一句话?
