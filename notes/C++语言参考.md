@@ -57,7 +57,7 @@ reverse(s.begin() + start, s.begin() + i);   // 逐词翻:151 用它把整体翻
   - 既然是容器,整套动作全有:下标 `s[i]`、范围 for `for (char c : s)`、`back()`、`push_back(c)`;map/set 也有 size()——169 的 `m.size()` 数的就是「不同键个数」
   - 为什么有两个名字:string 比 STL 容器诞生得早,先有 length();STL 后来统一成 size(),string 两个都保留
   - `s.size()` 同样返回无符号 size_t,空串 `s.size()-1` 与 vector 同款下溢
-  - 心智模型:`string ≈ vector<char> + 字符串专用操作`(+拼接、字典序比较、substr)
+  - 心智模型:`string ≈ vector<char> + 字符串专用操作`(+拼接、字典序比较、substr)——≈ 展开见下节「string 是 vector 吗」
 - 普通数组:`sizeof(arr)/sizeof(arr[0])`;C++17 可用 `std::size(arr)`
   - **大坑**:数组传参后退化为指针,sizeof 变成指针大小(8 字节),此法失效 → 长度要当参数传
 
@@ -110,6 +110,29 @@ nums.data()     // 底层元素首地址(int*)
 &nums           // vector 对象自己的地址(另一回事)
 // nums + 1 编译不过;cout << nums 编译不过(无 << 重载)
 ```
+
+## string 是 vector 吗:兄弟,不是父子(151 后追问)
+
+**不是。** string 和 vector<char> 是两个独立类型,没有继承关系,互相赋值/传参编译不过
+(`string s = v;` ✗)。但两者签了**同一份容器公共接口合同**(13 问答「size() 不是 vector
+的专利」的深层原因),所以**用起来像**——心智模型里那个 ≈ 是「行为像」,不是「血统是」。
+
+- **共有的(合同部分)**:size/empty/begin/end、下标、push_back/pop_back/back、
+  resize/erase/clear/swap、连续内存布局(data()/指针算术)、扩容与迭代器失效规则、
+  范围 for、进泛型算法——reverse/sort 要的是迭代器,不问容器身份(151 解二对 string
+  用 reverse,合同说话)。
+- **string 独有(文本语义)**:`+`/`+=` 拼接(vector 没有 operator+)、字典序比较 `<`
+  (逐字符比,即 14 逐列比较)、substr、c_str()、`<<`/`>>` 流式读写(vector 没有——
+  坑总集「cout << nums 编译不过」的另一面就是 string 有)、字面量直接构造
+  (`string s = "abc"` 行,`vector<char> v = "abc"` 编译不过)、stoi/to_string 配套。
+- **看不见的第 N+1 格**:string 保证结尾有一个 `'\0'`(c_str()/data() 的承诺,C++11 起
+  两者的承诺一致),vector<char> 不保证——151 逐词翻的哨兵 i==n,物理对应物就是这格
+  「不算数但存在」的终结符。
+- **字面量不是 string**:`"abc"` 的类型是 `const char[4]`(含结尾 '\0'),
+  `auto s = "abc";` 得到 `const char*`,`sizeof("abc") == 4`;它只是能**隐式转**成 string。
+- **历史**:string 比 STL 容器诞生得早,先有 length(),STL 统一成 size() 时两个都保留
+  (13 问答)——先来的老兵后来签合同,不是从 vector 特化出来的。选型:文本语义
+  (拼/比/输出)用 string;「元素恰好是 char 的数组」(当栈、拓扑序)用 vector<char>。
 
 内存布局:vector 是两层的——对象本体(约 24 字节,栈上)里存着「数据在哪/多长/容量」,元素本体在堆上。
 
@@ -314,3 +337,6 @@ dp[0] = 0;        // ← 炸:UBSan 报 reference binding to null pointer
 34. 151 压实收尾处 `resize(slow)` 和 `erase(slow)` 为什么恰好等价?砍短之后 capacity 变吗、废字符去哪了?resize 和 reserve 谁动 size、谁动 capacity?
 35. `char c = s.pop_back();` 错在哪?「取走最后一个字符」用哪两步写?库里哪道题是活例?
 36. 空串上调 pop_back() 会发生什么?对照 substr 的 pos 越界抛异常——标准库「谁检查、谁默认你保证」的规律是什么?
+37. string 和 vector<char> 哪些动作共有、哪些是 string 独有?心智模型里的 ≈ 靠什么成立(合同还是继承)?互相赋值会怎样?
+38. `"abc"` 的类型是什么?`auto s = "abc";` 得到什么?vector<char> 能从 "abc" 构造吗、string 为什么能?
+39. string 结尾保证的那一格是什么、谁在依赖它?151 逐词翻的哨兵 i==n 的物理对应物是哪格?
