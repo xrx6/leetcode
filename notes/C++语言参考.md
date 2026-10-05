@@ -26,6 +26,7 @@
 | `'IV'` 当字符串用 | 单引号只装**一个**字符;'IV' 是多字符字面量,类型 int(GCC ('I'<<8)\|'V'=18774),塞进 char 截断成 'V'——只警告不报错,六种减法符号全退化成第二个字符,含 4/9 的输入全 WA(12 自敲:3749→MMMDCCLX,不含 4/9 的 2047 个侥幸全过) | 两字以上用双引号配 `string`:`map<int,string>{{4,"IV"}}`;单引号留给单字符 |
 | `else` 后跟缩进对齐的多条语句 | 只有第一条属于 else:`else l++; c++;` 的 c++ 悬空在循环体层、每轮都执行——58 自敲里恰被 continue 跳过/break 截住,巧合无害(未爆);换个控制流就 WA | `else { l++; c++; }`:复合语句一律大括号,让缩进说实话 |
 | 哨兵位置被当值读 | 逐词翻收尾循环写到 `i <= n`,判据直接 `s[i] == ' '` → i==n 时 s[n] 越界读 | 哨兵只当信号,不当值:`i == n \|\| s[i] == ' '` 左项真时短路,右项不会被读(151);坑「哨兵用 <=」的病根是**解引用**哨兵,`<=` 走到哨兵本身不病 |
+| 空 vector/string 调 `pop_back()`/`back()` | 无参数可查,标准库不检查:空容器上是 UB,**不抛异常**,静默(与空容器 operator[] 同族) | 靠不变量/约束保证非空(151 解一 pop_back 由「至少一词 ⇒ ans 非空」兜底);不放心就先判 `empty()` |
 
 ## sort(`<algorithm>`,力扣免 include)
 
@@ -83,6 +84,9 @@ string t = s.substr(pos, len);    // 取段:从 pos 拷贝 len 个,**不动原�
   用双指针/栈;**边遍历边 erase 迭代器失效**,正解 `it = s.erase(it)`(坑总集已有行,
   vector 同款)。
 - 删最后一个用 `s.pop_back()`;`s.erase(s.size()-1)` 是同效果的 erase 写法。
+- **pop_back = 砍尾的最短写法**(151 问答):无参数、返回 void、size 减 1;与 resize 砍尾同款近似 O(1)——只挪 size 标记和结尾 `'\0'`,不搬字符、不还仓库。151 解一末尾 `ans.pop_back()` 就是「统一动作+末尾一刀」的那一刀。尾部三个粒度:**pop_back 砍 1 格 / erase(k) 删到尾 / resize(k) 钉总长**——同一根尾巴的三种说法。string 和 vector 都有它(容器公共接口,string ≈ vector<char>);push_back/pop_back 一推一弹,均摊 O(1)——尾部是 O(1) 的老家,中间删 O(n) 的代价全花在维持顺序上(380 用乱序换掉的正是这笔)。
+- **pop_back 不返回删掉的值**(返回 void):`char c = s.pop_back();` 编译不过。想「取走最后一个」是两步:`char c = s.back(); s.pop_back();`——380 换尾删除的 `int last = nums.back(); ... nums.pop_back();` 就是活例。
+- **空容器上 pop_back/back 是 UB,不抛异常**(坑总集已立行):标准库的检查策略——**带参数的按参数查**(substr/erase 的 pos 越界抛 out_of_range,`at(i)` 查下标),**无参的动作**(operator[]/back/pop_back)默认调用者保证前置条件。151 的 pop_back 靠约束兜底(至少一词 ⇒ ans 非空)。
 - **substr / resize = 151 双解的化身**(151 问答):解一(拷贝派,O(n) 空间)`ans += s.substr(i+1, end-i)` 把词拷出来拼答案;解二(原地派,O(1) 空间)`s.resize(slow)` 把压实后的废尾一刀砍掉。erase/substr 是「删掉不要的/拿出想要的」对偶(14),resize 补上第三角「把长度钉在 k」——三个都在「原地改自己」和「拷贝出新串」两大阵营里站队:erase、resize 原地派,substr 独守拷贝派。
 - **宽容度不对称**(151 问答,与 14 的 erase 二参钳制同族):substr 的 len 要多了只是**钳到尾**——`substr(2, 1000)` 在 5 格串上老实给 [2, 末尾];但 pos 越界(pos > size())直接抛 out_of_range。规矩一句话:**pos 是「起点必须存在」,len 是「要多少给多少」**——erase 的 (pos, len) 同款规矩。
 - **resize(slow) ≡ erase(slow)**:同一刀的两种说法——「定长到 slow」/「从 slow 删到尾」,151 压实收尾处恰好等价。边界不同:erase 能删中段、只会变短;resize 只管总长(砍尾/撑尾),还能撑长。
@@ -308,3 +312,5 @@ dp[0] = 0;        // ← 炸:UBSan 报 reference binding to null pointer
 32. 151 压实空格的判据为什么和 `s[slow-1]` 比?换成 `s[fast-1]` 本题恰好等价,靠的是什么巧合?
 33. substr 的 pos 和 len,哪个越界会抛异常、哪个只是被钳制?这个「宽容度不对称」和 erase 的二参钳制是不是同一条规矩?
 34. 151 压实收尾处 `resize(slow)` 和 `erase(slow)` 为什么恰好等价?砍短之后 capacity 变吗、废字符去哪了?resize 和 reserve 谁动 size、谁动 capacity?
+35. `char c = s.pop_back();` 错在哪?「取走最后一个字符」用哪两步写?库里哪道题是活例?
+36. 空串上调 pop_back() 会发生什么?对照 substr 的 pos 越界抛异常——标准库「谁检查、谁默认你保证」的规律是什么?
