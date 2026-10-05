@@ -90,6 +90,7 @@ string t = s.substr(pos, len);    // 取段:从 pos 拷贝 len 个,**不动原�
 - **substr / resize = 151 双解的化身**(151 问答):解一(拷贝派,O(n) 空间)`ans += s.substr(i+1, end-i)` 把词拷出来拼答案;解二(原地派,O(1) 空间)`s.resize(slow)` 把压实后的废尾一刀砍掉。erase/substr 是「删掉不要的/拿出想要的」对偶(14),resize 补上第三角「把长度钉在 k」——三个都在「原地改自己」和「拷贝出新串」两大阵营里站队:erase、resize 原地派,substr 独守拷贝派。
 - **宽容度不对称**(151 问答,与 14 的 erase 二参钳制同族):substr 的 len 要多了只是**钳到尾**——`substr(2, 1000)` 在 5 格串上老实给 [2, 末尾];但 pos 越界(pos > size())直接抛 out_of_range。规矩一句话:**pos 是「起点必须存在」,len 是「要多少给多少」**——erase 的 (pos, len) 同款规矩。
 - **resize(slow) ≡ erase(slow)**:同一刀的两种说法——「定长到 slow」/「从 slow 删到尾」,151 压实收尾处恰好等价。边界不同:erase 能删中段、只会变短;resize 只管总长(砍尾/撑尾),还能撑长。
+- **resize 只认长度,不认条件**(151 问答):它砍的是保留区外的废尾;151 多留的那格空格在 slow−1、**在保留区里面**,resize 的刀口够不着——「该不该少留一格」必须自己做成 `if(slow>0&&s[slow-1]==' ') slow--;`,决策在前、执行(下刀)在后。决策后置成 `pop_back()` 版等价,但删不掉。
 - **砍短只挪标记,不还仓库**:resize 砍短近似 O(1)——废字符物理上还躺在串里,capacity 一格不还,只是 size 之外「不算数」了(真想还内存有 shrink_to_fit,但它只是「请求」不保证)。这正是快慢指针框架「保留区 | 未扫区 | 废数据区」的收尾一幕。**resize 动 size,reserve 动 capacity**(自测 16):reserve 完 `v[0]` 照样 UB,下标只认 size。
 - **省一步临时**(工程向):`ans += s.substr(...)` 拷两次(substr 先拷出临时串,+= 再拼进 ans);`ans.append(s, pos, len)` 一步直接从 s 拷进 ans——151 解一那种循环拼词的写法。
 
@@ -340,3 +341,4 @@ dp[0] = 0;        // ← 炸:UBSan 报 reference binding to null pointer
 37. string 和 vector<char> 哪些动作共有、哪些是 string 独有?心智模型里的 ≈ 靠什么成立(合同还是继承)?互相赋值会怎样?
 38. `"abc"` 的类型是什么?`auto s = "abc";` 得到什么?vector<char> 能从 "abc" 构造吗、string 为什么能?
 39. string 结尾保证的那一格是什么、谁在依赖它?151 逐词翻的哨兵 i==n 的物理对应物是哪格?
+40. 151 收尾的 `slow--` 和 `resize(slow)` 各负责什么?为什么有 resize 也替代不了 slow--——多留的那格空格在哪一格?同一个决策还能后置成什么写法、为什么删不掉?
