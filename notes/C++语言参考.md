@@ -27,6 +27,7 @@
 | `else` 后跟缩进对齐的多条语句 | 只有第一条属于 else:`else l++; c++;` 的 c++ 悬空在循环体层、每轮都执行——58 自敲里恰被 continue 跳过/break 截住,巧合无害(未爆);换个控制流就 WA | `else { l++; c++; }`:复合语句一律大括号,让缩进说实话 |
 | 哨兵位置被当值读 | 逐词翻收尾循环写到 `i <= n`,判据直接 `s[i] == ' '` → i==n 时 s[n] 越界读 | 哨兵只当信号,不当值:`i == n \|\| s[i] == ' '` 左项真时短路,右项不会被读(151);坑「哨兵用 <=」的病根是**解引用**哨兵,`<=` 走到哨兵本身不病 |
 | 空 vector/string 调 `pop_back()`/`back()` | 无参数可查,标准库不检查:空容器上是 UB,**不抛异常**,静默(与空容器 operator[] 同族) | 靠不变量/约束保证非空(151 解一 pop_back 由「至少一词 ⇒ ans 非空」兜底);不放心就先判 `empty()` |
+| 元素当位置传给算法 | `reverse(s[start], s[i])` 把 char 塞给要迭代器的参数,模板报错一大片(151 逐词翻) | 算法要**位置**:`s.begin()+start`;`s[start]` 是**值**(差一个解引用:`s[k] ≡ *(s.begin()+k)`) |
 
 ## sort(`<algorithm>`,力扣免 include)
 
@@ -179,6 +180,7 @@ for (; it != v.end(); ++it) *it;
 - **begin()/end() 是「取起点/哨兵的函数」**:`v.begin()` 指首元素,`v.end()` 指最后一格的**再下一格**(哨兵:可以算、可以比,**不可解引用**)。左闭右开让「空区间」免费表示(begin==end)。
 - **范围 for 是迭代器的皮肤**:`for (int x : v)` 展开成 begin/end + 三招循环,裸数组同样适用(`for (int x : arr)` 合法)。
 - **能力分级**:vector/数组 = 指针级全能(`it+3`、`it1-it2`、`<`);map/list = 只能 `++/--` 一步步走。所以 find 谁都能伺候,`it - v.begin()`(迭代器换下标)只有指针级的能玩。
+- **算法参数要位置,不要值**(151 问答「不能写 s[start] 吗」):`reverse(s.begin()+start, s.begin()+i)` 的参数回答「从哪格翻到哪格」,是**位置**问题;`s[start]` 是 **char 值**,回答不了(字符还会重复——哪个 'o'?),塞进去模板推导直接失败。位置与元素差一个解引用:`s[k] ≡ *(s.begin()+k)`——坑总集「back()/end() 混用」行是同一个区分。`begin()+start` 里的 + 是指针算术,单位 = 字符不是字节。**标准库没有下标版 reverse**,想用下标自己手写(三次翻转.md 的 `myReverse(s, l, r)` 闭区间版):换算 `reverse(begin+start, begin+i) ⇔ myReverse(s, start, i-1)`——std 版 [first,last) 左闭右开,手写习惯 [l,r] 闭区间,那个 −1 漏了会把分隔空格卷进词里翻坏词边界(151:翻 [0,5] 闭区间,"dlrow olleh" 变 " worldolleh",两词粘连)。
 - **指到的元素带成员时,`*it` 升级成 `->`**(12 问答):`it->first` ≡ `(*it).first`——先解引用拿到指着的那格,再对它取成员。map 的一格是 `pair<const int,string>`,两个成员名定死:`first` 键、`second` 值(位置编号,没有内涵)。**分工口诀:手里是对象(或引用)用 `.`,手里是指针/迭代器(指向对象)用 `->`**。vector<int> 的迭代器指向的元素是 int 本身,没成员可取,所以只见 `*it` 不见 `->`;经迭代器只能改 `it->second`——键是树排座的依据,准改值不准改键。
 - **auto 顺理成章**:迭代器真实类型如 `unordered_map<int,int>::iterator`,没人手写——`auto it = m.find(k);` 让编译器按右边填类型,编译期钉死,不是「万能变量」。三大高频岗位:`auto it = m.find(...)`、`auto it = v.begin()`、`for (auto& [k,v] : m)`。
 
@@ -342,3 +344,5 @@ dp[0] = 0;        // ← 炸:UBSan 报 reference binding to null pointer
 38. `"abc"` 的类型是什么?`auto s = "abc";` 得到什么?vector<char> 能从 "abc" 构造吗、string 为什么能?
 39. string 结尾保证的那一格是什么、谁在依赖它?151 逐词翻的哨兵 i==n 的物理对应物是哪格?
 40. 151 收尾的 `slow--` 和 `resize(slow)` 各负责什么?为什么有 resize 也替代不了 slow--——多留的那格空格在哪一格?同一个决策还能后置成什么写法、为什么删不掉?
+41. reverse 的参数为什么不能写 `s[start]`?元素和位置差的那一步是什么运算?为什么说算法只认迭代器是「位置的统一货币」?
+42. std::reverse 区间 [first,last) 左闭右开,手写 `myReverse(s,l,r)` 是闭区间——151 的 `reverse(begin+start, begin+i)` 换手写版该怎么调?漏了 −1 会破坏什么?
