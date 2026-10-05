@@ -60,14 +60,15 @@ reverse(s.begin() + start, s.begin() + i);   // 逐词翻:151 用它把整体翻
 - 普通数组:`sizeof(arr)/sizeof(arr[0])`;C++17 可用 `std::size(arr)`
   - **大坑**:数组传参后退化为指针,sizeof 变成指针大小(8 字节),此法失效 → 长度要当参数传
 
-## string 删段与取段:erase / substr(14 问答)
+## string 删段·取段·定长:erase / substr / resize(14、151 问答)
 
 ```cpp
 s.erase(pos, len);                // 从下标 pos 删 len 个字符(原地修改,最常用)
 s.erase(pos);                     // 只给下标 = 从 pos 删到**末尾**(不是只删一个!)
 s.erase(it);                      // 删迭代器指着的那一个字符
 s.erase(first, last);             // 删迭代器区间 [first, last)
-s.resize(k);                      // 截短到 k 格(变长则补 '\0'/指定值)——「长度刀」另一写法;151 压实后砍废尾也是它(resize(slow))
+s.resize(k);                      // 定长:截短到 k 格,或撑长补 '\0'——151 压实后砍废尾就是它(resize(slow))
+s.resize(k, 'x');                 // 撑长时补指定字符(缺省才是 '\0')
 string t = s.substr(pos, len);    // 取段:从 pos 拷贝 len 个,**不动原串**;len 缺省 = 取到尾
 ```
 
@@ -82,6 +83,11 @@ string t = s.substr(pos, len);    // 取段:从 pos 拷贝 len 个,**不动原�
   用双指针/栈;**边遍历边 erase 迭代器失效**,正解 `it = s.erase(it)`(坑总集已有行,
   vector 同款)。
 - 删最后一个用 `s.pop_back()`;`s.erase(s.size()-1)` 是同效果的 erase 写法。
+- **substr / resize = 151 双解的化身**(151 问答):解一(拷贝派,O(n) 空间)`ans += s.substr(i+1, end-i)` 把词拷出来拼答案;解二(原地派,O(1) 空间)`s.resize(slow)` 把压实后的废尾一刀砍掉。erase/substr 是「删掉不要的/拿出想要的」对偶(14),resize 补上第三角「把长度钉在 k」——三个都在「原地改自己」和「拷贝出新串」两大阵营里站队:erase、resize 原地派,substr 独守拷贝派。
+- **宽容度不对称**(151 问答,与 14 的 erase 二参钳制同族):substr 的 len 要多了只是**钳到尾**——`substr(2, 1000)` 在 5 格串上老实给 [2, 末尾];但 pos 越界(pos > size())直接抛 out_of_range。规矩一句话:**pos 是「起点必须存在」,len 是「要多少给多少」**——erase 的 (pos, len) 同款规矩。
+- **resize(slow) ≡ erase(slow)**:同一刀的两种说法——「定长到 slow」/「从 slow 删到尾」,151 压实收尾处恰好等价。边界不同:erase 能删中段、只会变短;resize 只管总长(砍尾/撑尾),还能撑长。
+- **砍短只挪标记,不还仓库**:resize 砍短近似 O(1)——废字符物理上还躺在串里,capacity 一格不还,只是 size 之外「不算数」了(真想还内存有 shrink_to_fit,但它只是「请求」不保证)。这正是快慢指针框架「保留区 | 未扫区 | 废数据区」的收尾一幕。**resize 动 size,reserve 动 capacity**(自测 16):reserve 完 `v[0]` 照样 UB,下标只认 size。
+- **省一步临时**(工程向):`ans += s.substr(...)` 拷两次(substr 先拷出临时串,+= 再拼进 ans);`ans.append(s, pos, len)` 一步直接从 s 拷进 ans——151 解一那种循环拼词的写法。
 
 ## 数组名 vs vector 名(最重要的概念区分)
 
@@ -300,3 +306,5 @@ dp[0] = 0;        // ← 炸:UBSan 报 reference binding to null pointer
 30. 「跳过 [i, i+len) 取剩余部分」用 substr 怎么拼出来?erase 与 substr 的视角差别一句话?
 31. 逐词翻的收尾为什么敢写 `i <= n`?哨兵位置什么时候能走到、什么时候不能读——用短路写法说准确。
 32. 151 压实空格的判据为什么和 `s[slow-1]` 比?换成 `s[fast-1]` 本题恰好等价,靠的是什么巧合?
+33. substr 的 pos 和 len,哪个越界会抛异常、哪个只是被钳制?这个「宽容度不对称」和 erase 的二参钳制是不是同一条规矩?
+34. 151 压实收尾处 `resize(slow)` 和 `erase(slow)` 为什么恰好等价?砍短之后 capacity 变吗、废字符去哪了?resize 和 reserve 谁动 size、谁动 capacity?
