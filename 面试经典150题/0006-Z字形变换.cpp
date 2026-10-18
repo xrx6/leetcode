@@ -1,6 +1,6 @@
 // 题号:0006  题名:Z字形变换  难度:中等
 // 链接:https://leetcode.cn/problems/zigzag-conversion/?envType=study-plan-v2&envId=top-interview-150
-// 状态:看题解后理解(方向开关+行桶/周期公式直写,Python 交叉验证 478 万穷举+2000 随机三方一致;自己敲一遍,一遍过 AC——r=1 守卫/两堵墙/初值 false 一处不少,差异全在语言层:int 循环变量、按值拼桶、守卫后置,坑5-7)
+// 状态:看题解后理解(方向开关+行桶/周期公式直写,Python 交叉验证 478 万穷举+2000 随机三方一致;自己敲一遍,一遍过 AC——r=1 守卫/两堵墙/初值 false 一处不少,差异全在语言层:int 循环变量、按值拼桶、守卫后置,坑5-7;参考版与自敲版并存对照)
 //
 // 思路:
 //   输出=按行拼接,列坐标在逐行读出时被整个丢弃 ⇒ 每个字符需要的全部
@@ -54,16 +54,41 @@
 //      不用起。三处差异(坑5-7)全是语言层/顺序层脚印,算法结构一处
 //      不差——该记的墙、该配的初值、该挡的 r=1 全都长住了。
 
-// 解法一(方向开关+行桶,主解;自敲版入库):行号靠撞墙翻转,边走边入桶,
-//   末了按行拼接。变量名从自敲版(godown/x)。
+// 解法一(方向开关+行桶,参考版,主解):行号靠撞墙翻转,边走边入桶,末了按行拼接。
 class Solution {
 public:
     string convert(string s, int numRows) {
         int n=s.size();
-        vector<string> rows(min(numRows,n));        // 桶数取 min:s 短时用不满(见坑4;先造桶见坑7)
         if(numRows==1)                              // Z 形状不存在,两版共用守卫(见坑1)
             return s;
-        bool godown=false;                          // 初值"非向下":首格撞 0 墙翻成向下(见坑3)
+        vector<string> rows(min(numRows,n));        // 桶数取 min:s 短时用不满(见坑4)
+        int row=0;
+        bool goingDown=false;                       // 初值"非向下":首格撞 0 墙翻成向下(见坑3)
+        for(char c:s)
+        {
+            rows[row]+=c;
+            if(row==0||row==numRows-1)              // 两堵墙:撞顶或撞底即掉头
+                goingDown=!goingDown;
+            row+=goingDown?1:-1;
+        }
+        string ret;
+        for(string& r:rows)                         // 绑引用拼桶:免每桶整串拷贝(对照坑6)
+            ret+=r;
+        return ret;
+    }
+};
+
+// 自敲版(看题解后照解法一敲出,一遍过 AC):结构与参考版逐步一致,三处
+//   差异全在语言层/顺序层(坑5-7:int 循环变量、按值拼桶、守卫后置),
+//   变量名 godown/x。提交时改名 Solution:
+class Solution2 {
+public:
+    string convert(string s, int numRows) {
+        int n=s.size();
+        vector<string> rows(min(numRows,n));        // 桶数取 min(见坑4;先造桶见坑7)
+        if(numRows==1)                              // Z 形状不存在(见坑1)
+            return s;
+        bool godown=false;                          // 初值"非向下"(见坑3)
         int row=0;
         for(int c:s)                                // int 装 char:两次隐式转换搭桥(见坑5)
         {
@@ -75,7 +100,7 @@ public:
             row+=godown?1:-1;
         }
         string x;
-        for(string r:rows)                          // 按值拼桶:白拷 O(n)(见坑6,绑 & 免拷)
+        for(string r:rows)                          // 按值拼桶:白拷 O(n),结果仍对(见坑6)
             x+=r;
         return x;
     }
@@ -83,7 +108,7 @@ public:
 
 // 解法二(周期公式,直写输出):T=2r-2;按输出行拉取,中间行每周期收
 //   两格、端行一格;写指针 k 单调前进,输出即工作区。提交时改名 Solution:
-class Solution2 {
+class Solution3 {
 public:
     string convert(string s, int numRows) {
         int n=s.size();
