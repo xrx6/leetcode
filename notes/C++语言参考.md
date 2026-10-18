@@ -241,6 +241,8 @@ for (const auto& x : v) {...}       // 只读引用:大对象(string/vector)省�
 - **什么时候不能用**:需要下标(和 `i-1` 比较、写另一个数组的位置,如 189 翻转区间)→ 传统下标循环。
 - 169 修 MLE 的 `for (auto& [k,v] : m)` 就是它 + **结构化绑定**(pair/键值对一次拆两个变量)。
 - 遍历二维:行必须 `auto& row`,否则每行整行拷贝;行内元素 `int x` 拷贝没成本:
+- **循环变量类型不必精确匹配**(0006 自敲):`for (int c : s)` 装 string 也编译——char→int 提升塞进 c,`rows[row] += c` 再 int→char 收窄挑中 operator+=(char),两次标准转换全程静默;char→int→char 往返恒保真,结果必对(未爆)。同族变体才开始无声丢值:`for (double d : v)` 装 vector<int> 之类。与坑总集 'IV' 行同在 int↔char 边界——那边多字符拼大 int 截断丢高位、错得响亮;这边单字符值域内,无声地对。
+- **只读重元素也付拷贝税**(0006 自敲):`for (string r : rows) x += r;` 每条桶整串拷进 r 再拼接,结果对但白拷 O(n)——上式 `const auto&` 那行说的正是它的解法,0006 的桶(string)就是「大对象」的活例。
 
 ```cpp
 for (auto& row : dp)
@@ -364,3 +366,5 @@ dp[0] = 0;        // ← 炸:UBSan 报 reference binding to null pointer
 44. `vector<string> rows(min(numRows,n));` 一行里两副括号各在声明什么?`min(numRows,n)` 归哪副括号管、在什么期求值?
 45. `vector<int>` 和 `vector<string>` 是同一个类型吗?靠什么机制成为不同类型?尖括号里能写 `10` 吗——哪个模板反而收数字?
 46. string 的全名是什么?它和 `vector<int>` 在「由模具浇出来」这件事上是什么关系?
+47. `for (int c : s)` 装 string 为什么合法且结果必对?`rows[row] += c` 挑中哪个重载、经了几次转换?同族哪个变体开始无声丢值?
+48. 按值拼桶 `for (string r : rows)` 白付的是什么税?绑 const auto& 省在哪——哪个词保证「只读」?
