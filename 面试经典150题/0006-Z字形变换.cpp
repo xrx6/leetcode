@@ -1,6 +1,6 @@
 // 题号:0006  题名:Z字形变换  难度:中等
 // 链接:https://leetcode.cn/problems/zigzag-conversion/?envType=study-plan-v2&envId=top-interview-150
-// 状态:看题解后理解(方向开关+行桶/周期公式直写,Python 交叉验证 478 万穷举+2000 随机三方一致;待自己敲一遍 AC)
+// 状态:看题解后理解(方向开关+行桶/周期公式直写,Python 交叉验证 478 万穷举+2000 随机三方一致;自己敲一遍,一遍过 AC——r=1 守卫/两堵墙/初值 false 一处不少,差异全在语言层:int 循环变量、按值拼桶、守卫后置,坑5-7)
 //
 // 思路:
 //   输出=按行拼接,列坐标在逐行读出时被整个丢弃 ⇒ 每个字符需要的全部
@@ -38,28 +38,46 @@
 //      ——开关版走不到回头墙,公式版上行位全部越界、被逐周期检查跳过
 //      (脚本穷举 r∈[n,n+3] 全对)。早退守卫可省,留着省一趟;解法一
 //      桶数取 min(numRows,n),s 短时多出的空桶拼接也无害,纯省内存。
+//   5. 自敲版循环变量写 for(int c:s):范围 for 的变量类型不必精确等于
+//      元素类型——int 装得下 char 的全部值,char→int 提升塞进 c,到
+//      rows[row]+=c 再 int→char 收窄挑中 operator+=(char),两次标准
+//      转换全程静默;char→int→char 往返恒保真,结果必对(未爆)。要认得
+//      这是「沉默的转换」家族——同族变体 for(double d:v) 装 vector<int>
+//      才开始无声截尾。与坑总集 'IV' 行同在 int↔char 边界:那边多字符
+//      字面量拼大 int 截断丢高位、错得响亮;这边单字符值域内,无声地对。
+//   6. 自敲版拼桶写 for(string r:rows) x+=r;:按值——每条桶整串拷进 r
+//      再拼接,白拷 O(n) 字符,结果全对(未爆)纯浪费;绑 string& 免拷。
+//      与自测「范围 for 里改 x 数组会变吗」同源:拷贝版连只读都要付
+//      拷贝税,元素是 string 这类重家伙时尤其要绑引用。
+//   7. 自敲版把 rows 构造挪到 numRows==1 守卫前面:守卫路径白造一桶
+//      (一条空 string,未爆小浪费);守卫前置=门都没进就退货,连桶都
+//      不用起。三处差异(坑5-7)全是语言层/顺序层脚印,算法结构一处
+//      不差——该记的墙、该配的初值、该挡的 r=1 全都长住了。
 
-// 解法一(方向开关+行桶,主解):行号靠撞墙翻转,边走边入桶,末了按行拼接。
+// 解法一(方向开关+行桶,主解;自敲版入库):行号靠撞墙翻转,边走边入桶,
+//   末了按行拼接。变量名从自敲版(godown/x)。
 class Solution {
 public:
     string convert(string s, int numRows) {
         int n=s.size();
+        vector<string> rows(min(numRows,n));        // 桶数取 min:s 短时用不满(见坑4;先造桶见坑7)
         if(numRows==1)                              // Z 形状不存在,两版共用守卫(见坑1)
             return s;
-        vector<string> rows(min(numRows,n));        // 桶数取 min:s 短时用不满(见坑4)
+        bool godown=false;                          // 初值"非向下":首格撞 0 墙翻成向下(见坑3)
         int row=0;
-        bool goingDown=false;                       // 初值"非向下":首格撞 0 墙翻成向下(见坑3)
-        for(char c:s)
+        for(int c:s)                                // int 装 char:两次隐式转换搭桥(见坑5)
         {
-            rows[row]+=c;
+            rows[row]+=c;                           // 收:进当前行号的桶(int→char 在这步收窄)
             if(row==0||row==numRows-1)              // 两堵墙:撞顶或撞底即掉头
-                goingDown=!goingDown;
-            row+=goingDown?1:-1;
+            {
+                godown=!godown;
+            }
+            row+=godown?1:-1;
         }
-        string ret;
-        for(string& r:rows)
-            ret+=r;
-        return ret;
+        string x;
+        for(string r:rows)                          // 按值拼桶:白拷 O(n)(见坑6,绑 & 免拷)
+            x+=r;
+        return x;
     }
 };
 
