@@ -1,9 +1,8 @@
 // 题号:0028  题名:找出字符串中第一个匹配项的下标  难度:简单
 // 链接:https://leetcode.cn/problems/find-the-index-of-the-first-occurrence-in-a-string/?envType=study-plan-v2&envId=top-interview-150
-// 状态:看题解后理解(自己先试:单指针 i+已配长 s 一路向前,失配 s=0 硬归零,
-//   mississippi/issip 反例 -1≠4,最小反例 aab/ab;自己敲一遍 TLE:造表 while
-//   j=pi[i-1] 一进 while 即自赋值死循环,最小反例 needle=aab,pi 误开 m 大
-//   应为 n——坑6-7,修后待重交 AC)
+// 状态:看题解后理解(自己先试:单指针失配 s=0 丢窗口,mississippi/issip 反例,
+//   最小反例 aab/ab;自己敲一遍,首交 TLE(坑6-7:造表回跳下标 pi[i-1] 死循环/
+//   表开 m 大),修两处后 AC——主匹配循环首版即逐行全对;自敲版与参考版并存对照)
 //
 // 思路:
 //   暴力=每个起点整段重比,朴素双循环 O(n·m)。原解想省掉外层起点循环:
@@ -58,6 +57,12 @@
 //      vector[] 无检查静默写堆 UB(Python 复刻响亮 IndexError,
 //      响亮/无声一家亲,穷举 9216 例);m>n 时多开白费但功能全对
 //      (未爆)。变量名对调+照抄尺寸,差之毫厘叠出双爆点。
+//   8. 自敲 AC 版对照:与参考解法二语义全同,三处脚印——①m/n 含义对调(m=
+//      haystack,n=needle,参考版相反)但这版全程自洽:坑7 的爆点不在
+//      对调,在「对调+照抄旧含义的尺寸」——名字只是标签,混用两套含义
+//      才是雷;②化石 int s=0 从首版带进 AC,死代码未爆家族,退役变量
+//      记得清扫;③两处修复(回跳 j=pi[j-1]/表开 pi(n))正是坑6-7 的
+//      要害,主匹配循环首版就全对——错的都是抄串级笔误,不是理解错。
 
 // 解法一(朴素双循环,主解):外层枚举起点,内层逐位对齐,失配弃起点换下一个。
 class Solution {
@@ -76,9 +81,43 @@ public:
     }
 };
 
-// 解法二(KMP 失配表):已配长 j 随身携带不归零,失配跳 pi[j-1] 续比当前
-//   字符;造表=needle 对自己跑同一个循环。提交时改名 Solution:
+// 自敲版(看题解后照解法二敲出,首交 TLE 坑6-7,修两处后 AC):与参考版
+//   语义全同,差异 m/n 对调(自洽故无害,见坑8),化石 s 未删。提交时改名 Solution:
 class Solution2 {
+public:
+    int strStr(string haystack, string needle) {
+        int s = 0;                                   // 化石:首版的已配长,退役未清扫(见坑8)
+        int m = haystack.size();                     // 这版 m=haystack,参考版相反(见坑8)
+        int n = needle.size();
+        int j = 0;
+        vector<int> pi(n, 0);                        // π 表开 needle 长(坑7 修复)
+        for (int i = 1; i < n; i++)                  // 造表:自己找自己
+        {
+            while (j > 0 && needle[i] != needle[j])
+                j = pi[j - 1];                       // 回跳下标跟 j 走(坑6 修复)
+            if (needle[i] == needle[j])
+                j++;
+            pi[i] = j;
+        }
+        j = 0;                                       // 已配长
+        for (int i = 0; i < m; i++)
+        {
+            while (j > 0 && needle[j] != haystack[i])
+            {
+                j = pi[j - 1];                       // 失配跳表,更早起点必败
+            }
+            if (haystack[i] == needle[j])
+                j++;
+            if (j == n)
+                return i - n + 1;                    // 找到即退,迟退下一轮越界(见坑3)
+        }
+        return -1;
+    }
+};
+
+// 解法二(KMP 失配表,参考版):已配长 j 随身携带不归零,失配跳 pi[j-1] 续比
+//   当前字符;造表=needle 对自己跑同一个循环。提交时改名 Solution:
+class Solution3 {
 public:
     int strStr(string haystack, string needle) {
         int n = haystack.size(), m = needle.size();
