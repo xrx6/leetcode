@@ -1,7 +1,9 @@
 // 题号:0028  题名:找出字符串中第一个匹配项的下标  难度:简单
 // 链接:https://leetcode.cn/problems/find-the-index-of-the-first-occurrence-in-a-string/?envType=study-plan-v2&envId=top-interview-150
 // 状态:看题解后理解(自己先试:单指针 i+已配长 s 一路向前,失配 s=0 硬归零,
-//   mississippi/issip 反例 -1≠4,最小反例 aab/ab;待自己敲一遍 AC)
+//   mississippi/issip 反例 -1≠4,最小反例 aab/ab;自己敲一遍 TLE:造表 while
+//   j=pi[i-1] 一进 while 即自赋值死循环,最小反例 needle=aab,pi 误开 m 大
+//   应为 n——坑6-7,修后待重交 AC)
 //
 // 思路:
 //   暴力=每个起点整段重比,朴素双循环 O(n·m)。原解想省掉外层起点循环:
@@ -41,6 +43,21 @@
 //   5. (未爆,语言层)原解条件 s!=needle.size()-1 在 size_t 域算:m=0
 //      时 size()-1 下溢成 SIZE_MAX,s!=SIZE_MAX 恒真,接着 needle[0]
 //      越界 UB——本题 m>=1 挡住;带 size()-1 的条件先想空串。
+//   6. 自敲 TLE 标本:造表 while 里写 j=pi[i-1](应 j=pi[j-1])。滚变量
+//      造表的不变量:进入第 i 轮时 j 恰等于 pi[i-1](上一轮刚写进去的),
+//      故 while 体是自赋值 j=j,条件永真 → 一进 while 就死循环,必 TLE
+//      (穷举实证:触发 ⟺ 标准造表需要至少一次跳表,99144 例 TLE 全部
+//      吻合此判据;最小反例 needle="aab",与 haystack 无关)。两示例
+//      needle "sad"/"leeto" 全程 j==0 不触发,又是巧合掩盖——提交先过
+//      一片再在 mississippi 类卡死。要害:回跳下标永远跟 j(已配长)
+//      走,i 是文本侧游标不进回跳公式——自敲版主匹配处的 j=pi[j-1]
+//      就写对了,两处本该同款。附:旧变量 s 没删,成了化石。
+//   7. 自敲版 π 表开成 pi(m,0)(应 pi(n,0)):此版把 m/n 含义对调
+//      (m=haystack,n=needle,参考版相反),尺寸照参考版「开 m」记,
+//      长度跟着旧含义走。两种下场:m<n 时造表 pi[i] 越界写,C++
+//      vector[] 无检查静默写堆 UB(Python 复刻响亮 IndexError,
+//      响亮/无声一家亲,穷举 9216 例);m>n 时多开白费但功能全对
+//      (未爆)。变量名对调+照抄尺寸,差之毫厘叠出双爆点。
 
 // 解法一(朴素双循环,主解):外层枚举起点,内层逐位对齐,失配弃起点换下一个。
 class Solution {
