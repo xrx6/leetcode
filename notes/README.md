@@ -27,4 +27,4 @@
 | 字符串/方向开关与周期公式.md | Z形重排只看行号不看列:开关撞墙翻转模拟走位,或周期 T=2r-2 公式按行直写输出;端行上行位重合只收一格,r=1 形状不存在两版死法不同 | 6 |
 | 字符串/失配回退与失配表.md | 失配后新起点可能藏在已比窗口内部:朴素肯回头重比,KMP 压张 π 表(最长相等前后缀)零回退续比;单指针归零=丢窗口,两层错(失配字符没重比/窗口内起点被跳) | 28 |
 | 字符串/贪心分行与余数均摊.md | 排版两步:入场费判据(len+1+w)贪心装行,+1=词间隔断别漏账;行认三种型,末行/单词行左对齐;余数均摊 base+extra 从左发≡轮流贴格;守恒式:词长+间隙格=maxWidth | 68 |
-| C++语言参考.md | 横向语言参考:坑总集、vector(布局/扩容/迭代器)、指针算术、class 与 return、unordered_map(哈希原理/分工三件套)、reverse、string vs vector<char>(兄弟不是父子)、string 删段取段定长(erase/substr/resize)、范围 for、VLA/二维 vector、空 vector 下标/无穷大初值、auto/rand、vector 两副括号(尖=类型,圆=初值)、cctype 字符分类(int 参数/负 char UB) | — |
+| C++语言参考.md | 横向语言参考:坑总集、vector(布局/扩容/迭代器)、指针算术、class 与 return、unordered_map(哈希原理/分工三件套)、reverse、string vs vector<char>(兄弟不是父子)、string 删段取段定长(erase/substr/resize)、范围 for、VLA/二维 vector、空 vector 下标/无穷大初值、auto/rand、vector 两副括号(尖=类型,圆=初值)、cctype 字符分类(int 参数/负 char UB/两系:is 判别当真假非零≠1,to 变换非目标原样) | — |
