@@ -29,6 +29,7 @@
 | 哨兵位置被当值读 | 逐词翻收尾循环写到 `i <= n`,判据直接 `s[i] == ' '` → i==n 时 s[n] 越界读 | 哨兵只当信号,不当值:`i == n \|\| s[i] == ' '` 左项真时短路,右项不会被读(151);坑「哨兵用 <=」的病根是**解引用**哨兵,`<=` 走到哨兵本身不病 |
 | 空 vector/string 调 `pop_back()`/`back()` | 无参数可查,标准库不检查:空容器上是 UB,**不抛异常**,静默(与空容器 operator[] 同族) | 靠不变量/约束保证非空(151 解一 pop_back 由「至少一词 ⇒ ans 非空」兜底);不放心就先判 `empty()` |
 | 元素当位置传给算法 | `reverse(s[start], s[i])` 把 char 塞给要迭代器的参数,模板报错一大片(151 逐词翻) | 算法要**位置**:`s.begin()+start`;`s[start]` 是**值**(差一个解引用:`s[k] ≡ *(s.begin()+k)`) |
+| cctype 家族直接喂 char | isalnum/tolower 参数是 int,要求 unsigned char 值域或 EOF;负 char 是 UB(125 未爆:题面限可打印 ASCII;UTF-8 ≥0x80 字节经 signed char 成负数,迁移必雷) | 字节流先过 `(unsigned char)c`;tolower 返回 int,ASCII 下接回 char 无损 |
 
 ## sort(`<algorithm>`,力扣免 include)
 
@@ -50,6 +51,17 @@ reverse(s.begin() + start, s.begin() + i);   // 逐词翻:151 用它把整体翻
 ```
 
 用法见 `翻转/三次翻转.md`(189 / 151)。
+
+## cctype 字符分类:isalnum / tolower(125 语言点)
+
+```cpp
+isalnum(s[l])       // 字母或数字(ASCII:A-Z a-z 0-9)
+tolower(s[l])       // 大写→小写;非字母原样返回('0'→'0')
+```
+
+- **参数合同是 int 不是 char**:家族要求实参值域为 `unsigned char` 或 `EOF`。可打印 ASCII(0x20~0x7E)恒非负,直接喂 char 安全(125 靠题面约束兜住);**负 char 是 UB**——扩展字节(≥0x80)落到 signed char 就成负数,处理 UTF-8/原始字节流前先 `(unsigned char)c`。
+- **tolower 不需要「是字母才调」的分支**:对非字母原样返回,两侧统一过一遍即归一(125 坑2:不归大小写,"aA" 误 false)。
+- **返回 int**:`char c = tolower(x)` 接回再用;ASCII 输入下值域不超 char,无损。
 
 ## 长度
 
@@ -369,3 +381,5 @@ dp[0] = 0;        // ← 炸:UBSan 报 reference binding to null pointer
 46. string 的全名是什么?它和 `vector<int>` 在「由模具浇出来」这件事上是什么关系?
 47. `for (int c : s)` 装 string 为什么合法且结果必对?`rows[row] += c` 挑中哪个重载、经了几次转换?同族哪个变体开始无声丢值?
 48. 按值拼桶 `for (string r : rows)` 白付的是什么税?绑 const auto& 省在哪——哪个词保证「只读」?
+49. isalnum/tolower 的参数类型是什么、对值域有什么要求?哪种输入会 UB,125 为什么恰好安全?稳妥写法是什么?
+50. tolower 对 '5' 返回什么?为什么两侧统一 tolower 不用先 isalpha 分支?它的返回类型是什么,接回 char 有没有损?
