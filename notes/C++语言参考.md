@@ -80,7 +80,7 @@ tolower(s[l])       // 大写→小写;非字母原样返回('0'→'0')
   - **size() 不是 vector 的专利**(13 问答):标准库给所有容器发了一份公共接口合同——size/empty/begin/end/swap 谁都得会(唯一例外 forward_list),泛型算法和范围 for 才能通吃。string 也是容器:**专门装 char 的那个**,13 是仓库第一道收 string 参数的题
   - 既然是容器,整套动作全有:下标 `s[i]`、范围 for `for (char c : s)`、`back()`、`push_back(c)`;map/set 也有 size()——169 的 `m.size()` 数的就是「不同键个数」
   - 为什么有两个名字:string 比 STL 容器诞生得早,先有 length();STL 后来统一成 size(),string 两个都保留
-  - `s.size()` 同样返回无符号 size_t,空串 `s.size()-1` 与 vector 同款下溢
+  - `s.size()` 同样返回无符号 size_t,空串 `s.size()-1` 与 vector 同款下溢——125 自敲标本:`int r=s.size()-1` 立刻收进 int,回绕被转换截在原地(n≥1 根本不回绕;空串主流平台得 -1 恰好无害);**留在无符号域进比较/更长运算才是爆点**(如 `i < s.size()-1` 空串时右端巨大,循环飞)
   - 心智模型:`string ≈ vector<char> + 字符串专用操作`(+拼接、字典序比较、substr)——≈ 展开见下节「string 是 vector 吗」
 - 普通数组:`sizeof(arr)/sizeof(arr[0])`;C++17 可用 `std::size(arr)`
   - **大坑**:数组传参后退化为指针,sizeof 变成指针大小(8 字节),此法失效 → 长度要当参数传
@@ -394,3 +394,4 @@ dp[0] = 0;        // ← 炸:UBSan 报 reference binding to null pointer
 49. isalnum/tolower 的参数类型是什么、对值域有什么要求?哪种输入会 UB,125 为什么恰好安全?稳妥写法是什么?
 50. tolower 对 '5' 返回什么?为什么两侧统一 tolower 不用先 isalpha 分支?它的返回类型是什么,接回 char 有没有损?
 51. is* 判别系和 to* 变换系各干什么、各举两个成员?isalnum 的返回值为什么不能写 ==1、只能 if 当真假用?tolower('5') 返回什么?手写 tolower 的等价式子是什么?
+52. `int r=s.size()-1` 在空串时经历哪两步、主流平台结果是什么?125 自敲版为什么没爆(两层兜底)?`s.size()-1` 真正会炸的用法是什么形态、举一例?
