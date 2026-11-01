@@ -66,6 +66,7 @@ tolower(s[l])       // 大写→小写;非字母原样返回('0'→'0')
 | is* 判别系 | 问问题:是这类字符吗 | isalnum(=isalpha\|\|isdigit)、isalpha、isdigit、isspace、isupper、islower、ispunct | 是→**非零**(不保证是 1),否→0 |
 | to* 变换系 | 动手脚:变成对应形态 | tolower、toupper | 变换/原样后的字符(int) |
 
+- **名字就是英语**:isalnum = is + alnum(phanumeric)——al=alpha 字母、num=numeric 数字,题面「字母数字字符」原文即 alphanumeric,函数名就是题面直译;isalpha 只占 al 半边,num 归 num 管(125 坑1 病根)。家族命名全是规律:「is+类别词(缩写)」问句(isdigit=digit、isspace=space、ispunct=punctuation、isupper/islower=case、isxdigit 的 x=hexadecimal)与「to+方向」祈使句(tolower/toupper)——与「is 系问话、to 系动手」口诀同源。
 - **判别系只能当真假用**:`if(isalnum(c))` 合法;`isalnum(c)==1` 是雷——标准只承诺「非零」,实现返回 2 时 ==1 悄悄变 false,编译器不管。
 - **手写等价物**(理解用,平时写库函数):isalnum ⇔ `('0'<=c&&c<='9')||('A'<=c&&c<='Z')||('a'<=c&&c<='z')`;tolower ⇔ `('A'<=c&&c<='Z')?c+32:c`(ASCII 大小写恰差 32)。
 - **参数合同是 int 不是 char**:家族要求实参值域为 `unsigned char` 或 `EOF`。可打印 ASCII(0x20~0x7E)恒非负,直接喂 char 安全(125 靠题面约束兜住);**负 char 是 UB**——扩展字节(≥0x80)落到 signed char 就成负数,处理 UTF-8/原始字节流前先 `(unsigned char)c`。
