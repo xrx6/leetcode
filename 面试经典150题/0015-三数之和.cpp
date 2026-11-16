@@ -4,7 +4,8 @@
 //   各走一步继续走——搜索的多解版;去重两处 i 层比前一枚/l 与 r 层比邻一枚,
 //   l 从 i+1 起结构性去重;O(n^2)/O(1);自己敲一遍,首交两坑(坑9 push_back
 //   三实参编译错/坑10 if 代 while 块长>=3 重收);二交修好前两坑,坑11 守卫
-//   站 && 右侧先访后判,ASAN 越界([0,0,0,0],11/316),修序待三交 AC)
+//   站 && 右侧先访后判,ASAN 越界([0,0,0,0],11/316);三交守卫换左,一遍过
+//   AC(2026-11-16)——自敲版以 Solution2 与参考版并存)
 //
 // 思路:
 //   题眼连读:「三元凑定值 0」+「答案不重复」+「顺序不重要」。暴力三重
@@ -121,6 +122,53 @@ public:
                     l++;                                 // 小了:l 出局
                 else
                     r--;                                 // 大了:r 出局
+            }
+        }
+        return res;
+    }
+};
+
+// 解法二(自敲版,2026-11-16 三交 AC;提交时改名 Solution):
+//   首交坑9(push_back 三实参编译错)/坑10(if 代 while 块长>=3 重收),二交
+//   坑11(守卫站 && 右侧先访后判,ASAN 越界),三交守卫换左一遍过。与参考版
+//   逐行同构:排序先行/i 层去重比前一枚/剪枝 >0/l=i+1/方向判据/命中先跳块
+//   再走步全同。差异一条(未爆):sum 表达式在 if 与 else-if 判据里各算一遍,
+//   同刻数组不变恒同,只多常数(同 0011 坑7 家族)。守卫换左版转写全池
+//   (穷举 19500+随机 20000)零分歧零越界。变量与语义保持原提交原貌,
+//   仅对齐仓库排版。
+class Solution2 {
+public:
+    vector<vector<int>> threeSum(vector<int>& nums) {
+        int n=nums.size();
+        vector<vector<int>> res;
+        sort(nums.begin(),nums.end());
+        for(int i=0;i<n-2;i++)
+        {
+            if(i>0&&nums[i]==nums[i-1])
+            {
+                continue;                                       // i 层去重:块首已配完全场(坑1/坑2)
+            }
+            if(nums[i]>0)
+            {
+                break;                                          // 剪枝:锚为正三正必>0(坑6)
+            }
+            int l=i+1,r=n-1;                                    // l 从 i+1:不复用+定字典序(坑5)
+            while(l<r)
+            {
+                if(nums[l]+nums[r]==-nums[i])                   // 判据里算第一遍(未爆常数)
+                {
+                    res.push_back({nums[i],nums[l],nums[r]});   // 一件货:大括号打包(坑9)
+                    while(l<r&&nums[l+1]==nums[l])              // 守卫在左:判先于访(坑11)
+                        l++;
+                    while(l<r&&nums[r-1]==nums[r])              // r 侧守卫同样在左
+                        r--;
+                    l++;
+                    r--;                                        // 跳完块各走一步(坑4/坑10)
+                }
+                else if(nums[l]+nums[r]<-nums[i])               // else-if 再算一遍(未爆常数)
+                    l++;
+                else
+                    r--;
             }
         }
         return res;
