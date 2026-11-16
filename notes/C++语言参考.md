@@ -76,6 +76,7 @@ tolower(s[l])       // 大写→小写;非字母原样返回('0'→'0')
 - **参数合同是 int 不是 char**:家族要求实参值域为 `unsigned char` 或 `EOF`。可打印 ASCII(0x20~0x7E)恒非负,直接喂 char 安全(125 靠题面约束兜住);**负 char 是 UB**——扩展字节(≥0x80)落到 signed char 就成负数,处理 UTF-8/原始字节流前先 `(unsigned char)c`。
 - **tolower 不需要「是字母才调」的分支**:对非字母原样返回,两侧统一过一遍即归一(125 坑2:不归大小写,"aA" 误 false)。
 - **返回 int**:`char c = tolower(x)` 接回再用;ASCII 输入下值域不超 char,无损。
+- **同一雷区的兄弟写法(0003 补)**:拿 char 当数组下标 `cnt[s[i]]`——signed char 一旦为负即负下标 UB,与家族过同一道 `(unsigned char)` 闸(3 未爆:题面限可打印 ASCII 兜住)。
 
 ## 二分查找族:lower_bound / upper_bound(`<algorithm>`,0392 跳表、209 解二)
 
