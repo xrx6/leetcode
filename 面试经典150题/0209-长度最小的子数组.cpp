@@ -1,7 +1,9 @@
 // 题号:0209  题名:长度最小的子数组  难度:中等
 // 链接:https://leetcode.cn/problems/minimum-size-subarray-sum/?envType=study-plan-v2&envId=top-interview-150
 // 状态:看题解后理解(正数给单调性,右端进货、可行即左端吐货,吐一步收一步
-//   长度——同向双指针压「窗口统计量」;O(n)/O(1);待自己敲一遍 AC)
+//   长度——同向双指针压「窗口统计量」;O(n)/O(1);自己敲一遍,一遍过
+//   AC(2026-11-16)——自敲版以 Solution2 与参考版并存,与参考版零语义
+//   级差异:右端叫 i、三声明并一行,判据/次序/哨兵/终检全同)
 //
 // 思路:
 //   题眼三连:「正整数数组」+「连续子数组和 >= target」+「最短」。暴力枚举
@@ -63,6 +65,7 @@
 //      半档就静默溢出成负数。两端各在 int 内,相加未必在(45 的 INT_MAX
 //      加法家族):比较前先算量级账,贴线就整体升 long long。
 
+// 解法一(滑动窗口,参考版,主解)
 class Solution {
 public:
     int minSubArrayLen(int target, vector<int>& nums) {
@@ -82,10 +85,32 @@ public:
     }
 };
 
+// 自敲版(看题解后照解法一敲出,2026-11-16 一遍过 AC):与参考版逐行同构,
+//   零语义级差异——右端叫 i(参考版叫 r),sum/ans/l 三声明并一行;判据
+//   带等号/先收长度再吐货/哨兵 n+1/return 终检全同,坑1-4 家族全避开。
+//   转写版全池(穷举 67251+随机 40000)零错。提交时改名 Solution:
+class Solution2 {
+public:
+    int minSubArrayLen(int target, vector<int>& nums) {
+        int n=nums.size();
+        int sum=0,ans=n+1,l=0;                           // 哨兵大一号(坑4)
+        for(int i=0;i<n;i++)                             // i 当右端,只往右
+        {
+            sum+=nums[i];                                // 进货
+            while(sum>=target)                           // 判据读窗口和,带等号(坑3)
+            {
+                ans=min(ans,i-l+1);                      // 先收长度(坑2)
+                sum-=nums[l++];                          // 再吐货,while 不是 if(坑1)
+            }
+        }
+        return ans>n?0:ans;                              // 无解收尾(坑4)
+    }
+};
+
 // 解法二(进阶 O(n log n):前缀和+二分;提交时改名 Solution):
 //   pre 严格递增(全正),对每个 i 二分最小 j 使 pre[j] >= pre[i]+target,
 //   窗口 nums[i..j-1] 长度 j-i。与解一在全池(穷举 67251+随机 40000)逐例一致。
-class Solution2 {
+class Solution3 {
 public:
     int minSubArrayLen(int target, vector<int>& nums) {
         int n = nums.size();
