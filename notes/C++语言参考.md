@@ -32,6 +32,7 @@
 | 元素当位置传给算法 | `reverse(s[start], s[i])` 把 char 塞给要迭代器的参数,模板报错一大片(151 逐词翻) | 算法要**位置**:`s.begin()+start`;`s[start]` 是**值**(差一个解引用:`s[k] ≡ *(s.begin()+k)`) |
 | cctype 家族直接喂 char | isalnum/tolower 参数是 int,要求 unsigned char 值域或 EOF;负 char 是 UB(125 未爆:题面限可打印 ASCII;UTF-8 ≥0x80 字节经 signed char 成负数,迁移必雷) | 字节流先过 `(unsigned char)c`;tolower 返回 int,ASCII 下接回 char 无损 |
 | 空串 s[0](string 特权位) | string 的 pos==size() 返回 '\0' 有定义(C++11 起,再多一位才 UB),vector 同位是 UB——同一下标写法合同差一格;392 无空 s 守卫版 (空,"x") 靠 '\0' 配不上 + 同轮 j==m(0==0) 侥幸返真,真死穴是 (空,空) 循环不进返假(纯逻辑层) | 守卫要不要看骨架:扫 t 驱动的循环不进落 false,要 m==0 守卫;s 驱动(跳表/二分)循环不进天然落 true,不用守卫 |
+| 守卫放 && 右侧 | `while(a[i+1]==a[i] && i<j)`:&& 从左到右求值短路,访问排在守卫前=先访后判,守卫形同虚设;i 的同值块铺到数组末尾时 i 一路 ++ 到 n-1,下轮条件先读 a[n](15 二交自敲:ASAN heap-buffer-overflow,判官 [0,0,0,0] 11/316;最小标本 [-2,1,1] 仅 3 格;a[r-1] 那侧同笔误恒界内,单独未爆) | 守卫换左 `while(i<j && a[i+1]==a[i])`——「守卫在前」细化到 && 的左操作数:判先于访就安全,访先于判才要命(151 哨兵行 `i==n \|\| s[i]==' '` 同宗:左项真时短路,右项不会被读) |
 
 ## sort(`<algorithm>`,力扣免 include)
 
