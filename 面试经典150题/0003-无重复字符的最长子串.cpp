@@ -1,7 +1,8 @@
 // 题号:0003  题名:无重复字符的最长子串  难度:中等
 // 链接:https://leetcode.cn/problems/longest-substring-without-repeating-characters/?envType=study-plan-v2&envId=top-interview-150
 // 状态:看题解后理解(滑动窗口求最长镜像:不可行即缩左,吐到可行才收
-//   长度;统计量换成窗口字符计数;O(n)/O(|Σ|);待自己敲一遍 AC)
+//   长度;统计量换成窗口字符计数;O(n)/O(|Σ|);自己敲一遍,一遍过
+//   AC(2026-11-17)——口述收账,代码未贴回,自敲版未存档)
 //
 // 思路:
 //   题眼三连:「子串(连续)」+「无重复」+「最长」。暴力按左端扩右端
